@@ -1,0 +1,365 @@
+:root {
+  --bg: #141414;
+  --sidebar: #141414;
+  --card: #1b1b1b;
+  --surface: #171717;
+  --elevated: #1f1f1f;
+  --border: #2a2a2a;
+  --strong-border: #3c3c3c;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a5a5a5;
+  --text-muted: #737373;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 48px 40px 64px;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.header-description {
+  max-width: 650px;
+  margin: 16px 0 0;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.mode-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.mode-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.mode-button:hover {
+  border-color: var(--strong-border);
+  color: var(--text-primary);
+}
+
+.mode-button--active {
+  border-color: var(--strong-border);
+  background: #292929;
+  color: var(--text-primary);
+}
+
+.answer-panel,
+.summary-panel,
+.error-panel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.answer-panel h2,
+.visual-section h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.section-label {
+  margin-bottom: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.answer-text {
+  max-width: 900px;
+  margin: 14px 0 0;
+  color: var(--text-secondary);
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.status-pill {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.visual-section {
+  margin-top: 48px;
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin-top: 0;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.fusion-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.image-panel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.panel-heading span:first-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary-panel p:last-child {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.error-panel {
+  border-color: #5a3a3a;
+  margin-top: 24px;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.error-panel strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #f87171;
+}
+
+.error-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.uncertainty-panel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid #7c5310;
+  border-radius: 14px;
+  background: #1e1912;
+}
+
+.uncertainty-panel strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #fbbf24;
+  font-size: 15px;
+}
+
+.uncertainty-panel p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.initial-state-panel {
+  margin-top: 24px;
+  padding: 32px 24px;
+  border: 1px dashed var(--strong-border);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.initial-state-panel h3 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.initial-state-panel p {
+  max-width: 520px;
+  margin: 0 auto;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.skeleton-panel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #1f1f1f 25%, #2e2e2e 50%, #1f1f1f 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-line--title {
+  width: 35%;
+  height: 22px;
+  margin-bottom: 16px;
+}
+
+.skeleton-line--body {
+  width: 85%;
+  margin-bottom: 10px;
+}
+
+.skeleton-line--body-short {
+  width: 55%;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 240px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #1f1f1f 25%, #2e2e2e 50%, #1f1f1f 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 32px 24px 48px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mode-switcher {
+    justify-content: flex-start;
+  }
+
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .app-shell {
+    padding: 24px 16px 40px;
+  }
+
+  .app-header h1 {
+    font-size: 34px;
+  }
+
+  .answer-panel,
+  .summary-panel,
+  .error-panel,
+  .uncertainty-panel,
+  .initial-state-panel {
+    padding: 18px;
+  }
+
+  .image-panel {
+    padding: 12px;
+  }
+}

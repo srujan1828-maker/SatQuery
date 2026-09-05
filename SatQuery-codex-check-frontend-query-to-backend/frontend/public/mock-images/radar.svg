@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#252525"/>
+
+  <path d="M0 520 L180 400 L360 470 L540 340 L720 450 L920 300 L1200 430 L1200 800 L0 800Z"
+        fill="#3d3d3d"/>
+  <path d="M0 650 L250 520 L480 610 L720 470 L960 570 L1200 500 L1200 800 L0 800Z"
+        fill="#303030"/>
+
+  <rect x="310" y="300" width="250" height="220" fill="#777777"/>
+  <polygon points="280,300 435,205 590,300" fill="#5c5c5c"/>
+  <rect x="350" y="350" width="55" height="65" fill="#252525"/>
+  <rect x="455" y="350" width="55" height="65" fill="#252525"/>
+
+  <circle cx="820" cy="360" r="90" fill="#777777" opacity="0.45"/>
+  <circle cx="820" cy="360" r="55" fill="#999999" opacity="0.4"/>
+
+  <text x="40" y="60" fill="#ffffff" font-family="Arial, sans-serif" font-size="28">
+    RADAR · SENTINEL-1
+  </text>
+</svg>
