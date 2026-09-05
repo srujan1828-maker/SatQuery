@@ -13,8 +13,8 @@ const modes = ["vqa", "change_detection", "fusion"];
 const modeLabels = {
   vqa: "Visual Question Answering",
   change_detection: "Change Detection",
-  fusion: "Multimodal Sensor Fusion",
-  fusion_demo: "Multimodal Sensor Fusion",
+  fusion: "Sensor Fusion",
+  fusion_demo: "Sensor Fusion",
 };
 
 function App() {
