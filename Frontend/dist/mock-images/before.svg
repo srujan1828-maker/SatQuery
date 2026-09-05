@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#46594c"/>
+  <path d="M0 520 L200 390 L410 500 L600 340 L800 470 L1000 320 L1200 430 L1200 800 L0 800Z" fill="#34463b"/>
+  <rect x="270" y="300" width="250" height="220" fill="#85847a"/>
+  <polygon points="240,300 395,210 550,300" fill="#555b55"/>
+  <rect x="310" y="345" width="55" height="60" fill="#34403d"/>
+  <rect x="425" y="345" width="55" height="60" fill="#34403d"/>
+  <rect x="310" y="435" width="55" height="60" fill="#34403d"/>
+  <rect x="425" y="435" width="55" height="60" fill="#34403d"/>
+  <rect x="720" y="390" width="180" height="130" fill="#6f756e"/>
+  <text x="40" y="60" fill="#ffffff" font-family="Arial, sans-serif" font-size="28">BEFORE · SENTINEL-2</text>
+</svg>
