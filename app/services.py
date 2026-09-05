@@ -17,16 +17,21 @@ load_dotenv()
 class Settings:
     geochat_url: str | None
     gemini_api_key: str | None
-    frontend_url: str | None
+    frontend_origins: tuple[str, ...]
     demo_mode: bool
 
     @classmethod
     def from_environment(cls) -> "Settings":
         """Load optional local `.env` values without exposing them through the API."""
+        frontend_origins = tuple(
+            origin.strip().rstrip("/")
+            for origin in os.getenv("FRONTEND_URL", "").split(",")
+            if origin.strip()
+        )
         return cls(
             geochat_url=os.getenv("GEOCHAT_ENDPOINT_URL") or None,
             gemini_api_key=os.getenv("GEMINI_API_KEY") or None,
-            frontend_url=os.getenv("FRONTEND_URL", "").rstrip("/") or None,
+            frontend_origins=frontend_origins,
             demo_mode=os.getenv("DEMO_MODE", "true").lower() == "true",
         )
 

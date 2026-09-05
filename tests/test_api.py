@@ -35,11 +35,11 @@ def test_fusion_is_cached_and_needs_no_location() -> None:
 def test_settings_read_optional_service_environment(monkeypatch) -> None:
     monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
     monkeypatch.setenv("GEOCHAT_ENDPOINT_URL", "https://geochat.example")
-    monkeypatch.setenv("FRONTEND_URL", "https://frontend.example/")
+    monkeypatch.setenv("FRONTEND_URL", "https://frontend.example/,https://custom.example")
     settings = Settings.from_environment()
     assert settings.gemini_api_key == "test-gemini-key"
     assert settings.geochat_url == "https://geochat.example"
-    assert settings.frontend_url == "https://frontend.example"
+    assert settings.frontend_origins == ("https://frontend.example", "https://custom.example")
 
 
 def test_query_request_resolves_date_annotation() -> None:

@@ -227,7 +227,7 @@ Copy `.env.example` to `.env`, then optionally set `GEMINI_API_KEY` for the Gemi
 
 ### Frontend origin / CORS
 
-Set `FRONTEND_URL` to the complete deployed frontend origin (for example, `https://satquery-frontend.onrender.com`) when the browser frontend and API are deployed on different domains. The backend allows `GET`, `POST`, and preflight `OPTIONS` requests from that origin. It uses localhost port 3000 origins only when `FRONTEND_URL` is not set, which is appropriate for local development or same-origin hosting.
+The Vercel production origin `https://sat-query-d55zzn18t-auctor28-s-projects1.vercel.app` is allowed by default. In the Render backend environment, set `FRONTEND_URL` to a comma-separated list of any additional exact browser origins, such as a custom domain: `https://satquery.example.com`. The backend allows `GET`, `POST`, and preflight `OPTIONS` requests only from the Vercel origin and these configured additions. For local development, explicitly add `http://localhost:3000` to `FRONTEND_URL`.
 
 ## Run with Docker
 

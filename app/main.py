@@ -13,10 +13,12 @@ from app.services import Settings, handle_query
 app = FastAPI(title="SatQuery API", version="0.1.0")
 
 settings = Settings.from_environment()
-allowed_origins = [settings.frontend_url] if settings.frontend_url else [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# The current Vercel production deployment must work even if Render does not
+# receive FRONTEND_URL. Add custom production origins through that variable.
+DEFAULT_FRONTEND_ORIGINS = (
+    "https://sat-query-d55zzn18t-auctor28-s-projects1.vercel.app",
+)
+allowed_origins = list(dict.fromkeys((*DEFAULT_FRONTEND_ORIGINS, *settings.frontend_origins)))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
