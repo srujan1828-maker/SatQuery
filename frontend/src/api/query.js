@@ -1,6 +1,17 @@
+const DEFAULT_API_BASE_URL = "https://satquery.onrender.com";
+
+/**
+ * Base URL for requests made by the browser. Vite replaces this expression at
+ * build time, so set VITE_API_BASE_URL in Vercel before deploying.
+ */
+export const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
+).replace(/\/$/, "");
+
 /**
  * Resolves an image URL returned by the backend.
- * Relative URLs remain same-origin so Vercel can proxy them to the backend.
+ * Relative URLs are resolved against the backend so image requests go directly
+ * to the same service as the query request.
  *
  * @param {string} url - Image URL from Contract B response
  * @returns {string} Fully resolved image URL
@@ -14,8 +25,7 @@ export function resolveImageUrl(url) {
   }
 
   const cleanUrl = url.startsWith("/") ? url : `/${url}`;
-
-  return cleanUrl;
+  return `${apiBaseUrl}${cleanUrl}`;
 }
 
 /**
@@ -26,10 +36,9 @@ export function resolveImageUrl(url) {
  */
 export async function submitQuery(requestBody) {
   try {
-    // Always use the same-origin proxy. A VITE_API_BASE_URL value configured
-    // in Vercel is compiled into the client and would otherwise bypass this
-    // proxy, causing the direct cross-origin request shown in DevTools.
-    const response = await fetch("/api/query", {
+    // Deliberately call the configured backend directly rather than a Vercel
+    // rewrite. VITE_API_BASE_URL is embedded in the production bundle.
+    const response = await fetch(`${apiBaseUrl}/api/query`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +79,6 @@ export async function submitQuery(requestBody) {
 
     const data = await response.json();
 
-    // Keep relative satellite image URLs same-origin so /media is proxied too.
     if (Array.isArray(data.images)) {
       data.images = data.images.map((image) => ({
         ...image,
