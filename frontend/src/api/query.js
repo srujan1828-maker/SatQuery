@@ -1,7 +1,6 @@
 /**
  * Resolves an image URL returned by the backend.
- * If the URL is relative (e.g. "/media/img_1.png"), it is resolved against the
- * configured API base URL or remains same-origin for the Vercel proxy.
+ * Relative URLs remain same-origin so Vercel can proxy them to the backend.
  *
  * @param {string} url - Image URL from Contract B response
  * @returns {string} Fully resolved image URL
@@ -14,11 +13,9 @@ export function resolveImageUrl(url) {
     return url;
   }
 
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "";
-  const cleanBase = apiBaseUrl.replace(/\/+$/, "");
   const cleanUrl = url.startsWith("/") ? url : `/${url}`;
 
-  return cleanBase ? `${cleanBase}${cleanUrl}` : cleanUrl;
+  return cleanUrl;
 }
 
 /**
@@ -28,14 +25,11 @@ export function resolveImageUrl(url) {
  * @returns {Promise<Object>} Contract B response object
  */
 export async function submitQuery(requestBody) {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-  // Production calls are same-origin and Vercel proxies /api to Render. An
-  // explicit base URL remains useful for local development or other hosts.
-  const cleanBaseUrl = (apiBaseUrl || "").replace(/\/+$/, "");
-
   try {
-    const response = await fetch(`${cleanBaseUrl}/api/query`, {
+    // Always use the same-origin proxy. A VITE_API_BASE_URL value configured
+    // in Vercel is compiled into the client and would otherwise bypass this
+    // proxy, causing the direct cross-origin request shown in DevTools.
+    const response = await fetch("/api/query", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -76,7 +70,7 @@ export async function submitQuery(requestBody) {
 
     const data = await response.json();
 
-    // Resolve relative satellite image URLs against VITE_API_BASE_URL
+    // Keep relative satellite image URLs same-origin so /media is proxied too.
     if (Array.isArray(data.images)) {
       data.images = data.images.map((image) => ({
         ...image,
