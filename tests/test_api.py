@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models import QueryRequest
 from app.services import Settings
 
 client = TestClient(app)
@@ -37,3 +38,8 @@ def test_settings_read_optional_service_environment(monkeypatch) -> None:
     settings = Settings.from_environment()
     assert settings.gemini_api_key == "test-gemini-key"
     assert settings.geochat_url == "https://geochat.example"
+
+
+def test_query_request_resolves_date_annotation() -> None:
+    request = QueryRequest.model_validate({"query": "What is here?", "date": "2024-05-12"})
+    assert request.date.isoformat() == "2024-05-12"

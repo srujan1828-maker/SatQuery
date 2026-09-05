@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date as Date
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -16,8 +16,8 @@ class Location(BaseModel):
 
 
 class DateRange(BaseModel):
-    start: date
-    end: date
+    start: Date
+    end: Date
 
     @model_validator(mode="after")
     def ordered(self) -> "DateRange":
@@ -30,7 +30,9 @@ class QueryRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4000)
     language: str | None = None
     location: Location | None = None
-    date: date | None = None
+    # Use an alias so Pydantic does not resolve this type against this field's
+    # name while evaluating postponed annotations during application startup.
+    date: Date | None = None
     date_range: DateRange | None = None
     mode: Mode | None = None
 
@@ -39,7 +41,7 @@ class ImageResult(BaseModel):
     id: str
     url: str
     sensor: str
-    date: date
+    date: Date
     role: Literal["single", "before", "after", "optical", "radar"]
 
 
