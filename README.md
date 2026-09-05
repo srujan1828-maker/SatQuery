@@ -120,7 +120,7 @@ Get GeoChat-7B running and reachable from outside Kaggle, and build the query ro
 2. Wrap inference in FastAPI per Contract A. Test with `curl` from your own laptop before telling anyone it's ready.
 3. Start the Cloudflare Tunnel, confirm the public URL reaches `/infer` from a machine outside Kaggle.
 4. Hand the tunnel URL to Person 2 and post it in the shared channel — **every time it changes**, not just once.
-5. Build the query router: Anthropic API + tool/function calling, 3 tools (`call_vqa`, `call_change_detection`, `call_fusion_demo`), reads `query` (+ `language` if given) and decides which one to call. Router output must map cleanly onto Contract B's `mode` field — literally return one of the three mode strings, nothing else.
+5. Build the query router: Gemini API + tool/function calling, 3 tools (`call_vqa`, `call_change_detection`, `call_fusion_demo`), reads `query` (+ `language` if given) and decides which one to call. Router output must map cleanly onto Contract B's `mode` field — literally return one of the three mode strings, nothing else.
 6. Support English and Hindi in the same router prompt — no separate translation step or library.
 7. Pre-fetch and cache the fusion-demo scenario (image pair + GeoChat output) and hand the cached files to Person 2 for the fallback path.
 
@@ -157,7 +157,7 @@ Build everything behind Contract B — the GEE data layer, the three pipelines, 
 ## Constraints / rules
 - **Never** change Contract B's field names, types, or the fixed `mode` enum without updating Part 0 and notifying Person 3 first.
 - Never send a raw `500` for an expected failure (tunnel down, GEE quota, no data for a location) — always populate `error` and a plain-language `answer_text` per Contract B.
-- Keys/secrets (`ANTHROPIC_API_KEY`, `GEOCHAT_ENDPOINT_URL`, GEE credentials) live only in `.env`, never hardcoded, never committed.
+- Keys/secrets (`GEMINI_API_KEY`, `GEOCHAT_ENDPOINT_URL`, GEE credentials) live only in `.env`, never hardcoded, never committed.
 - Don't build any pipeline beyond the three listed in Section 2 of the project spec, even if GEE makes something else look easy to add.
 - Run integration checks continuously, not just at the end: every time Person 1's tunnel URL changes or Person 3 changes something touching the response shape, re-verify the full chain works, don't wait for a big merge at the deadline.
 
@@ -223,4 +223,4 @@ uv run uvicorn app.main:app --reload
 uv run pytest
 ```
 
-See `.env.example` for configuration. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
+See `.env.example` for configuration. The optional Gemini router key is named `GEMINI_API_KEY`; live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.

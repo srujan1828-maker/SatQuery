@@ -13,6 +13,7 @@ from app.models import APIError, DateRange, ImageResult, Location, Mode, Overlay
 @dataclass(frozen=True)
 class Settings:
     geochat_url: str | None = os.getenv("GEOCHAT_ENDPOINT_URL") or None
+    gemini_api_key: str | None = os.getenv("GEMINI_API_KEY") or None
     demo_mode: bool = os.getenv("DEMO_MODE", "true").lower() == "true"
 
 
