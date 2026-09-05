@@ -1,17 +1,20 @@
 import { useState } from "react";
 
 import ImageViewer from "./components/ImageViewer";
+import ComparisonSlider from "./components/ComparisonSlider";
+import FusionInspector from "./components/FusionInspector";
 import QueryPanel from "./components/QueryPanel";
 import HonestyPanel from "./components/HonestyPanel";
 
 import "./App.css";
 
-const modes = ["vqa", "change_detection", "fusion_demo"];
+const modes = ["vqa", "change_detection", "fusion"];
 
 const modeLabels = {
   vqa: "Visual Question Answering",
   change_detection: "Change Detection",
-  fusion_demo: "Fusion Demo",
+  fusion: "Sensor Fusion",
+  fusion_demo: "Sensor Fusion",
 };
 
 function App() {
@@ -32,100 +35,41 @@ function App() {
     if (!data || !data.images) return null;
 
     if (data.mode === "change_detection") {
-      const before = data.images.find(
-        (image) => image.role === "before",
-      );
-
-      const after = data.images.find(
-        (image) => image.role === "after",
-      );
-
-      return (
-        <div className="comparison-grid">
-          {before && (
-            <section className="image-panel">
-              <div className="panel-heading">
-                <span>Before</span>
-                <span>{before.date}</span>
-              </div>
-
-              <ImageViewer
-                image={before}
-                boxes={data.overlay_boxes}
-              />
-            </section>
-          )}
-
-          {after && (
-            <section className="image-panel">
-              <div className="panel-heading">
-                <span>After</span>
-                <span>{after.date}</span>
-              </div>
-
-              <ImageViewer
-                image={after}
-                boxes={data.overlay_boxes}
-              />
-            </section>
-          )}
-        </div>
-      );
+      const before = data.images.find((image) => image.role === "before");
+      const after = data.images.find((image) => image.role === "after");
+      if (before && after) {
+        return (
+          <ComparisonSlider
+            beforeImage={before}
+            afterImage={after}
+            boxes={data.overlay_boxes}
+          />
+        );
+      }
     }
 
-    if (data.mode === "fusion_demo") {
-      const optical = data.images.find(
-        (image) => image.role === "optical",
-      );
-
-      const radar = data.images.find(
-        (image) => image.role === "radar",
-      );
-
-      return (
-        <div className="fusion-stack">
-          {optical && (
-            <section className="image-panel">
-              <div className="panel-heading">
-                <span>Optical Observation (Sentinel-2)</span>
-                <span>{optical.date}</span>
-              </div>
-
-              <ImageViewer
-                image={optical}
-                boxes={data.overlay_boxes}
-              />
-            </section>
-          )}
-
-          {radar && (
-            <section className="image-panel">
-              <div className="panel-heading">
-                <span>Radar Observation (Sentinel-1)</span>
-                <span>{radar.date}</span>
-              </div>
-
-              <ImageViewer
-                image={radar}
-                boxes={data.overlay_boxes}
-              />
-            </section>
-          )}
-        </div>
-      );
+    if (data.mode === "fusion" || data.mode === "fusion_demo") {
+      const optical = data.images.find((image) => image.role === "optical");
+      const radar = data.images.find((image) => image.role === "radar");
+      if (optical && radar) {
+        return (
+          <FusionInspector
+            opticalImage={optical}
+            radarImage={radar}
+            boxes={data.overlay_boxes}
+          />
+        );
+      }
     }
 
     const image = data.images[0];
-
-    if (!image) {
-      return null;
-    }
+    if (!image) return null;
 
     return (
       <section className="image-panel">
         <div className="panel-heading">
-          <span>Satellite Image</span>
-          <span>{image.sensor} · {image.date}</span>
+          <span>Satellite Scene (Sentinel-2 L2A)</span>
+          <span>Acquisition: {image.date}</span>
         </div>
 
         <ImageViewer
@@ -145,7 +89,7 @@ function App() {
           {modeLabels[data.mode] || "ANSWER"}
         </div>
 
-        <h2>{data.mode === "fusion_demo" ? "Takeaway Synthesis" : "Answer"}</h2>
+        <h2>{data.mode === "fusion" || data.mode === "fusion_demo" ? "Multi-Sensor Synthesis" : "Answer"}</h2>
 
         <p className="answer-text">
           {data.answer_text}
@@ -240,14 +184,14 @@ function App() {
       );
     }
 
-    if (data.mode === "fusion_demo") {
+    if (data.mode === "fusion" || data.mode === "fusion_demo") {
       return (
         <>
           <section className="visual-section">
             <div className="section-header">
               <div>
-                <p className="eyebrow">GUIDED FUSION NARRATIVE</p>
-                <h2>Optical and Radar Evidence</h2>
+                <p className="eyebrow">MULTIMODAL SENSOR FUSION</p>
+                <h2>Aligned Optical & SAR Radar Evidence</h2>
               </div>
             </div>
 

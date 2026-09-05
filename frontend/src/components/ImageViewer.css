@@ -6,6 +6,10 @@
 .image-viewer__canvas {
   position: relative;
   width: 100%;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   background: #171717;
   border: 1px solid #2a2a2a;
@@ -17,6 +21,30 @@
   width: 100%;
   height: auto;
   max-width: 100%;
+}
+
+.image-viewer__error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+  color: #c9d3dc;
+  font-size: 0.88rem;
+  gap: 8px;
+}
+
+.image-viewer__error-sub {
+  color: #777777;
+  font-size: 0.78rem;
+}
+
+.image-viewer__error-link {
+  color: #00bcd4;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  margin-top: 6px;
 }
 
 .image-viewer__overlay {

@@ -9,6 +9,13 @@ function ImageViewer({ image, boxes = [] }) {
     width: 0,
     height: 0,
   });
+  const [loadError, setLoadError] = useState(false);
+  const [currentUrl, setCurrentUrl] = useState(image.url);
+
+  if (image.url !== currentUrl) {
+    setCurrentUrl(image.url);
+    setLoadError(false);
+  }
 
   useEffect(() => {
     const element = imageRef.current;
@@ -46,22 +53,39 @@ function ImageViewer({ image, boxes = [] }) {
   return (
     <figure className="image-viewer">
       <div className="image-viewer__canvas">
-        <img
-          ref={imageRef}
-          className="image-viewer__image"
-          src={image.url}
-          alt={`${image.role} satellite observation`}
-          onLoad={() => {
-            const rect = imageRef.current?.getBoundingClientRect();
-
-            if (rect) {
-              setDimensions({
-                width: rect.width,
-                height: rect.height,
-              });
-            }
-          }}
-        />
+        {loadError ? (
+          <div className="image-viewer__error-state">
+            <p><strong>Satellite scene image tile unavailable</strong></p>
+            <p className="image-viewer__error-sub">
+              The public tile endpoint did not return valid raster data.
+            </p>
+            <a
+              href={image.url}
+              target="_blank"
+              rel="noreferrer"
+              className="image-viewer__error-link"
+            >
+              Inspect upstream URL
+            </a>
+          </div>
+        ) : (
+          <img
+            ref={imageRef}
+            className="image-viewer__image"
+            src={image.url}
+            alt={`${image.role} satellite observation`}
+            onError={() => setLoadError(true)}
+            onLoad={() => {
+              const rect = imageRef.current?.getBoundingClientRect();
+              if (rect) {
+                setDimensions({
+                  width: rect.width,
+                  height: rect.height,
+                });
+              }
+            }}
+          />
+        )}
 
         <div className="image-viewer__overlay" aria-hidden="true">
           {imageBoxes.map((box) => {

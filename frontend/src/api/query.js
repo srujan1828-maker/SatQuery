@@ -1,4 +1,6 @@
-const DEFAULT_API_BASE_URL = "https://satquery.onrender.com";
+const isLocalhost = typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+const DEFAULT_API_BASE_URL = isLocalhost ? "http://127.0.0.1:8000" : "https://satquery.onrender.com";
 
 /**
  * Base URL for requests made by the browser. Vite replaces this expression at
