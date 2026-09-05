@@ -60,7 +60,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
       mode,
     };
 
-    if (!isFusion) {
+    if (latitude && longitude) {
       body.location = {
         lat: Number(latitude),
         lon: Number(longitude),
@@ -71,7 +71,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
       }
     }
 
-    if (mode === "vqa") {
+    if (mode === "vqa" || isFusion) {
       body.date = date;
     }
 
@@ -92,11 +92,11 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
       return;
     }
 
-    if (!isFusion && (!latitude || !longitude)) {
+    if (!latitude || !longitude) {
       return;
     }
 
-    if (mode === "vqa" && !date) {
+    if ((mode === "vqa" || isFusion) && !date) {
       return;
     }
 
@@ -173,124 +173,128 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
           </div>
         </div>
 
-        {!isFusion && (
+        <div className="map-toggle-bar">
+          <span className="eyebrow">
+            {isFusion
+              ? "GEOSPATIAL TARGETING (OPTICAL & SAR RADAR FOOTPRINT)"
+              : "GEOSPATIAL TARGETING (SENTINEL-2 FOOTPRINT)"}
+          </span>
+          <button
+            type="button"
+            className="map-toggle-btn"
+            onClick={() => setShowMap(!showMap)}
+          >
+            {showMap ? "Hide Interactive Map" : "Show Live Interactive Map"}
+          </button>
+        </div>
+
+        {showMap && (
+          <div className="query-field--full">
+            <InteractiveMap
+              latitude={latitude}
+              longitude={longitude}
+              locationName={locationName}
+              onLocationSelect={handleLocationSelect}
+            />
+          </div>
+        )}
+
+        <div className="query-field">
+          <label htmlFor="location-name">Target Location Name</label>
+          <input
+            id="location-name"
+            name="location-name"
+            type="text"
+            value={locationName}
+            onChange={(event) => setLocationName(event.target.value)}
+            placeholder="e.g. New Delhi, Kedarnath"
+          />
+        </div>
+
+        <div className="query-field">
+          <label htmlFor="language">Language</label>
+          <select
+            id="language"
+            name="language"
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+          >
+            <option value="en">English</option>
+            <option value="hi">Hindi (हिंदी)</option>
+          </select>
+        </div>
+
+        <div className="query-field">
+          <label htmlFor="latitude">Latitude (&deg;N)</label>
+          <input
+            id="latitude"
+            name="latitude"
+            type="number"
+            step="any"
+            value={latitude}
+            onChange={(event) => setLatitude(event.target.value)}
+            placeholder="e.g. 28.6139"
+            required
+          />
+        </div>
+
+        <div className="query-field">
+          <label htmlFor="longitude">Longitude (&deg;E)</label>
+          <input
+            id="longitude"
+            name="longitude"
+            type="number"
+            step="any"
+            value={longitude}
+            onChange={(event) => setLongitude(event.target.value)}
+            placeholder="e.g. 77.2090"
+            required
+          />
+        </div>
+
+        {(mode === "vqa" || isFusion) && (
+          <div className="query-field query-field--full">
+            <label htmlFor="date">
+              {isFusion
+                ? "Optical & Radar Observation Date / Time"
+                : "Sentinel-2 Observation Date"}
+            </label>
+            <input
+              id="date"
+              name="date"
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              required
+            />
+          </div>
+        )}
+
+        {isChangeDetection && (
           <>
-            <div className="map-toggle-bar">
-              <span className="eyebrow">GEOSPATIAL TARGETING (SENTINEL-2 FOOTPRINT)</span>
-              <button
-                type="button"
-                className="map-toggle-btn"
-                onClick={() => setShowMap(!showMap)}
-              >
-                {showMap ? "Hide Interactive Map" : "Show Live Interactive Map"}
-              </button>
-            </div>
-
-            {showMap && (
-              <div className="query-field--full">
-                <InteractiveMap
-                  latitude={latitude}
-                  longitude={longitude}
-                  locationName={locationName}
-                  onLocationSelect={handleLocationSelect}
-                />
-              </div>
-            )}
-
             <div className="query-field">
-              <label htmlFor="location-name">Target Location Name</label>
+              <label htmlFor="start-date">Baseline (Before) Date</label>
               <input
-                id="location-name"
-                name="location-name"
-                type="text"
-                value={locationName}
-                onChange={(event) => setLocationName(event.target.value)}
-                placeholder="e.g. New Delhi, Kedarnath"
-              />
-            </div>
-
-            <div className="query-field">
-              <label htmlFor="language">Language</label>
-              <select
-                id="language"
-                name="language"
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-              >
-                <option value="en">English</option>
-                <option value="hi">Hindi (हिंदी)</option>
-              </select>
-            </div>
-
-            <div className="query-field">
-              <label htmlFor="latitude">Latitude (&deg;N)</label>
-              <input
-                id="latitude"
-                name="latitude"
-                type="number"
-                step="any"
-                value={latitude}
-                onChange={(event) => setLatitude(event.target.value)}
-                placeholder="e.g. 28.6139"
+                id="start-date"
+                name="start-date"
+                type="date"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
                 required
               />
             </div>
 
             <div className="query-field">
-              <label htmlFor="longitude">Longitude (&deg;E)</label>
+              <label htmlFor="end-date">Observation (After) Date</label>
               <input
-                id="longitude"
-                name="longitude"
-                type="number"
-                step="any"
-                value={longitude}
-                onChange={(event) => setLongitude(event.target.value)}
-                placeholder="e.g. 77.2090"
+                id="end-date"
+                name="end-date"
+                type="date"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
                 required
               />
             </div>
-
-            {mode === "vqa" && (
-              <div className="query-field query-field--full">
-                <label htmlFor="date">Sentinel-2 Observation Date</label>
-                <input
-                  id="date"
-                  name="date"
-                  type="date"
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            {isChangeDetection && (
-              <>
-                <div className="query-field">
-                  <label htmlFor="start-date">Baseline (Before) Date</label>
-                  <input
-                    id="start-date"
-                    name="start-date"
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="query-field">
-                  <label htmlFor="end-date">Observation (After) Date</label>
-                  <input
-                    id="end-date"
-                    name="end-date"
-                    type="date"
-                    value={endDate}
-                    onChange={(event) => setEndDate(event.target.value)}
-                    required
-                  />
-                </div>
-              </>
-            )}
           </>
         )}
 

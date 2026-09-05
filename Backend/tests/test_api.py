@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models import Location, QueryRequest
-from app.services import SentinelScene, Settings, geochat_answer, geochat_infer_url, inference_image, sentinel_tile_url
+from app.services import Sentinel1Scene, SentinelScene, Settings, geochat_answer, geochat_infer_url, inference_image, sentinel_tile_url
 
 client = TestClient(app)
 
@@ -128,3 +128,99 @@ def test_geochat_retries_a_transient_connection_failure(monkeypatch) -> None:
     assert answer == "A model response"
     assert confident is True
     assert error is None
+
+
+def test_fusion_with_location_and_date_queries_optical_and_radar(monkeypatch) -> None:
+    async def optical_scene(*_args: object) -> SentinelScene:
+        return SentinelScene("S2A_TEST_OPTICAL", date(2024, 5, 12), "https://imagery.example/optical.png")
+
+    async def radar_scene(*_args: object) -> Sentinel1Scene:
+        return Sentinel1Scene("S1A_TEST_RADAR", date(2024, 5, 13), "https://imagery.example/radar.png")
+
+    async def imagery(*_args: object) -> tuple[bytes, str]:
+        return inference_image(), "image/png"
+
+    monkeypatch.setattr("app.services.sentinel_scene", optical_scene)
+    monkeypatch.setattr("app.services.sentinel1_scene", radar_scene)
+    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
+
+    response = client.post(
+        "/api/query",
+        json={
+            "query": "Analyze flood extent using optical and radar fusion",
+            "location": {"lat": 28.6139, "lon": 77.2090, "name": "New Delhi"},
+            "date": "2024-05-12",
+            "mode": "fusion_demo",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "fusion_demo"
+    assert body["used_cache_fallback"] is False
+    roles = [img["role"] for img in body["images"]]
+    assert "optical" in roles
+    assert "radar" in roles
+
+
+def test_change_detection_routes_to_geochat(monkeypatch) -> None:
+    async def scene(loc, target_date: date) -> SentinelScene:
+        return SentinelScene(f"S2A_{target_date}", target_date, f"https://imagery.example/{target_date}.png")
+
+    async def imagery(*_args: object) -> tuple[bytes, str]:
+        return inference_image(), "image/png"
+
+    async def mock_geochat(prompt, settings, *args, **kwargs):
+        return "Kedarnath shows significant debris clearance.", [{"x_min": 0.3, "y_min": 0.3, "x_max": 0.7, "y_max": 0.7, "label": "cleared zone"}], True, None
+
+    monkeypatch.setattr("app.services.sentinel_scene", scene)
+    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
+    monkeypatch.setattr("app.services.geochat_answer", mock_geochat)
+
+    response = client.post(
+        "/api/query",
+        json={
+            "query": "Detect debris changes between baseline and current observation",
+            "location": {"lat": 30.7346, "lon": 79.0669, "name": "Kedarnath"},
+            "date_range": {"start": "2013-05-01", "end": "2024-05-01"},
+            "mode": "change_detection",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "change_detection"
+    assert "debris clearance" in body["answer_text"]
+    assert "debris clearance" in body["change_summary"]
+    assert body["confidence_flag"] == "high"
+    assert len(body["overlay_boxes"]) > 0
+
+
+def test_change_detection_routes_to_gemini_if_geochat_unconfigured(monkeypatch) -> None:
+    async def scene(loc, target_date: date) -> SentinelScene:
+        return SentinelScene(f"S2A_{target_date}", target_date, f"https://imagery.example/{target_date}.png")
+
+    async def imagery(*_args: object) -> tuple[bytes, str]:
+        return inference_image(), "image/png"
+
+    async def mock_gemini(*args, **kwargs):
+        return "Gemini Vision detected flood inundation receding.", [{"x_min": 0.2, "y_min": 0.2, "x_max": 0.8, "y_max": 0.8, "label": "water receding"}], True
+
+    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
+    monkeypatch.setattr("app.services.sentinel_scene", scene)
+    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
+    monkeypatch.setattr("app.services.gemini_answer", mock_gemini)
+
+    response = client.post(
+        "/api/query",
+        json={
+            "query": "Assess water receding",
+            "location": {"lat": 26.1856, "lon": 91.7483, "name": "Brahmaputra"},
+            "date_range": {"start": "2023-06-01", "end": "2024-06-01"},
+            "mode": "change_detection",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "change_detection"
+    assert "Gemini Vision detected" in body["answer_text"]
+    assert body["confidence_flag"] == "high"
+
