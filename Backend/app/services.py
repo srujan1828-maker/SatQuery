@@ -446,7 +446,12 @@ async def gemini_answer(
         parts.append({"text": user_text})
         parts.append({"inline_data": {"mime_type": image_content_type, "data": b64_image}})
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_api_key}"
+    primary_model = os.getenv("GEMINI_MODEL") or "gemini-flash-latest"
+    models_to_try = [primary_model]
+    for m in ("gemini-3.6-flash", "gemini-2.5-flash"):
+        if m not in models_to_try:
+            models_to_try.append(m)
+
     payload = {
         "contents": [{"parts": parts}],
         "generationConfig": {
@@ -454,20 +459,24 @@ async def gemini_answer(
             "maxOutputTokens": 1000,
         },
     }
-    try:
-        async with httpx.AsyncClient(timeout=25.0) as client:
-            resp = await client.post(url, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            candidates = data.get("candidates", [])
-            if candidates:
-                p = candidates[0].get("content", {}).get("parts", [])
-                if p:
-                    text = p[0].get("text", "").strip()
-                    if text:
-                        return text, [], True
-    except Exception as error:
-        logger.warning("Gemini Vision analysis call failed: %s", error)
+    for model_name in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_api_key}"
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(url, json=payload)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        p = candidates[0].get("content", {}).get("parts", [])
+                        if p:
+                            text = p[0].get("text", "").strip()
+                            if text:
+                                return text, [], True
+                else:
+                    logger.warning("Gemini Vision model %s returned status %d: %s", model_name, resp.status_code, resp.text[:200])
+        except Exception as error:
+            logger.warning("Gemini Vision model %s call failed: %s", model_name, error)
     return None, [], False
 
 
