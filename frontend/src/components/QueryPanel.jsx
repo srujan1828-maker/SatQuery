@@ -14,11 +14,12 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("en");
   const [locationName, setLocationName] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [date, setDate] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [latitude, setLatitude] = useState("28.6139");
+  const [longitude, setLongitude] = useState("77.2090");
+  const [date, setDate] = useState("2026-06-01");
+  const [startDate, setStartDate] = useState("2026-05-01");
+  const [endDate, setEndDate] = useState("2026-06-01");
+  const [validationError, setValidationError] = useState("");
 
   const isFusion = mode === "fusion_demo";
   const isChangeDetection = mode === "change_detection";
@@ -57,16 +58,20 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setValidationError("");
 
     if (!query.trim()) {
+      setValidationError("Please enter a question or instruction before submitting.");
       return;
     }
 
     if (!isFusion && (!latitude || !longitude)) {
+      setValidationError("Please enter valid Latitude and Longitude coordinates.");
       return;
     }
 
     if (mode === "vqa" && !date) {
+      setValidationError("Please select an observation date for VQA mode.");
       return;
     }
 
@@ -74,6 +79,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
       isChangeDetection &&
       (!startDate || !endDate)
     ) {
+      setValidationError("Please select both Start Date and End Date for Change Detection.");
       return;
     }
 
@@ -273,6 +279,12 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
               </>
             )}
           </>
+        )}
+
+        {validationError && (
+          <div className="query-field query-field--full" style={{ color: "#f87171", fontSize: "13px", fontWeight: "600" }}>
+            {validationError}
+          </div>
         )}
 
         <div className="query-form__footer">
