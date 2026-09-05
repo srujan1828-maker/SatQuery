@@ -128,64 +128,94 @@ export default function InteractiveMap({
     }
   }, []);
 
-  // Initialize map instance once
+  const updateTargetRef = useRef(updateLocationTarget);
+  useEffect(() => {
+    updateTargetRef.current = updateLocationTarget;
+  }, [updateLocationTarget]);
+
+  // Initialize map instance ONCE on mount
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    const map = L.map(mapContainerRef.current, {
-      center: [numLat, numLon],
-      zoom: 13,
-      zoomControl: true,
-      attributionControl: false,
-    });
+    if (mapContainerRef.current._leaflet_id) {
+      delete mapContainerRef.current._leaflet_id;
+    }
 
-    const tileConfig = TILE_PROVIDERS.satellite;
-    const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
-    tileLayerRef.current = tileLayer;
+    try {
+      const map = L.map(mapContainerRef.current, {
+        center: [numLat, numLon],
+        zoom: 13,
+        zoomControl: true,
+        attributionControl: false,
+      });
 
-    // Marker
-    const marker = L.marker([numLat, numLon], {
-      icon: createRadarIcon(),
-      draggable: true,
-    }).addTo(map);
-    markerRef.current = marker;
+      const tileConfig = TILE_PROVIDERS[activeLayer] || TILE_PROVIDERS.satellite;
+      const tileLayer = L.tileLayer(tileConfig.url, tileConfig.options).addTo(map);
+      tileLayerRef.current = tileLayer;
 
-    // Sentinel tile footprint rectangle
-    const bounds = calculateFootprintBounds(numLat, numLon);
-    const footprint = L.rectangle(bounds, {
-      color: "#00e5ff",
-      weight: 1.5,
-      dashArray: "4, 4",
-      fillColor: "#00bcd4",
-      fillOpacity: 0.12,
-      interactive: false,
-    }).addTo(map);
-    footprintRef.current = footprint;
+      // Marker
+      const marker = L.marker([numLat, numLon], {
+        icon: createRadarIcon(),
+        draggable: true,
+      }).addTo(map);
+      markerRef.current = marker;
 
-    // Click handler to set target
-    map.on("click", (e) => {
-      const { lat, lng } = e.latlng;
-      updateLocationTarget(lat, lng);
-    });
+      // Sentinel tile footprint rectangle
+      const bounds = calculateFootprintBounds(numLat, numLon);
+      const footprint = L.rectangle(bounds, {
+        color: "#00e5ff",
+        weight: 1.5,
+        dashArray: "4, 4",
+        fillColor: "#00bcd4",
+        fillOpacity: 0.12,
+        interactive: false,
+      }).addTo(map);
+      footprintRef.current = footprint;
 
-    // Drag marker handler
-    marker.on("dragend", () => {
-      const { lat, lng } = marker.getLatLng();
-      updateLocationTarget(lat, lng);
-    });
+      // Click handler to set target
+      map.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        if (updateTargetRef.current) {
+          updateTargetRef.current(lat, lng);
+        }
+      });
 
-    // Zoom level tracker
-    map.on("zoomend", () => {
-      setCurrentZoom(map.getZoom());
-    });
+      // Drag marker handler
+      marker.on("dragend", () => {
+        const { lat, lng } = marker.getLatLng();
+        if (updateTargetRef.current) {
+          updateTargetRef.current(lat, lng);
+        }
+      });
 
-    mapInstanceRef.current = map;
+      // Zoom level tracker
+      map.on("zoomend", () => {
+        setCurrentZoom(map.getZoom());
+      });
 
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-    };
-  }, [numLat, numLon, updateLocationTarget]);
+      mapInstanceRef.current = map;
+
+      const timer = setTimeout(() => {
+        try {
+          map.invalidateSize();
+        } catch {
+          // ignore
+        }
+      }, 150);
+
+      return () => {
+        clearTimeout(timer);
+        try {
+          map.remove();
+        } catch {
+          // ignore
+        }
+        mapInstanceRef.current = null;
+      };
+    } catch (err) {
+      console.warn("Leaflet map initialization warning:", err);
+    }
+  }, []);
 
   // Update base tile layer
   useEffect(() => {
