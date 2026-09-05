@@ -1,6 +1,7 @@
 /**
  * Resolves an image URL returned by the backend.
- * If the URL is relative (e.g. "/media/img_1.png"), it is resolved against VITE_API_BASE_URL.
+ * If the URL is relative (e.g. "/media/img_1.png"), it is resolved against the
+ * configured API base URL or remains same-origin for the Vercel proxy.
  *
  * @param {string} url - Image URL from Contract B response
  * @returns {string} Fully resolved image URL
@@ -29,25 +30,9 @@ export function resolveImageUrl(url) {
 export async function submitQuery(requestBody) {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  // Show a clear configuration error if VITE_API_BASE_URL is not set
-  if (!apiBaseUrl) {
-    return {
-      mode: requestBody.mode || "vqa",
-      answer_text: "Backend API URL is not configured.",
-      images: [],
-      overlay_boxes: [],
-      change_summary: null,
-      confidence_flag: "uncertain",
-      used_cache_fallback: false,
-      error: {
-        code: "missing_config",
-        message:
-          "VITE_API_BASE_URL environment variable is missing. Please configure VITE_API_BASE_URL with your backend URL.",
-      },
-    };
-  }
-
-  const cleanBaseUrl = apiBaseUrl.replace(/\/+$/, "");
+  // Production calls are same-origin and Vercel proxies /api to Render. An
+  // explicit base URL remains useful for local development or other hosts.
+  const cleanBaseUrl = (apiBaseUrl || "").replace(/\/+$/, "");
 
   try {
     const response = await fetch(`${cleanBaseUrl}/api/query`, {
