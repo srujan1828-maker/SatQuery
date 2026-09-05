@@ -36,11 +36,10 @@ function HonestyPanel() {
         </div>
 
         <div className="honesty-panel__item">
-          <strong>Development status</strong>
+          <strong>Prototype Scope</strong>
 
           <span>
-            Current imagery includes development mock assets
-            and is not representative of final satellite data.
+            Queries process real satellite observations (Sentinel-1/2) via the GeoChat model with documented prototype boundaries.
           </span>
         </div>
       </div>

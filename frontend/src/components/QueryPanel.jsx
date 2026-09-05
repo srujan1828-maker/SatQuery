@@ -10,7 +10,7 @@ const modeLabels = {
   fusion_demo: "Fusion Demo",
 };
 
-function QueryPanel({ mode, onResult, onLoadingChange }) {
+function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("en");
   const [locationName, setLocationName] = useState("");
@@ -285,12 +285,15 @@ function QueryPanel({ mode, onResult, onLoadingChange }) {
           <button
             type="submit"
             className="query-submit"
+            disabled={isLoading}
           >
-            {isFusion
-              ? "Run Fusion Demo"
-              : mode === "change_detection"
-                ? "Detect Change"
-                : "Ask SatQuery"}
+            {isLoading
+              ? "Processing..."
+              : isFusion
+                ? "Run Fusion Demo"
+                : mode === "change_detection"
+                  ? "Detect Change"
+                  : "Ask SatQuery"}
           </button>
         </div>
       </form>

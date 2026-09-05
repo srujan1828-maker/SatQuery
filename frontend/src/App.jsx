@@ -349,6 +349,7 @@ function App() {
         mode={mode}
         onResult={handleResult}
         onLoadingChange={setIsLoading}
+        isLoading={isLoading}
       />
 
       {renderContent()}
