@@ -58,24 +58,30 @@ def image(image_id: str, sensor: str, image_date: date, role: str) -> ImageResul
     return ImageResult(id=image_id, url=f"/media/{image_id}.svg", sensor=sensor, date=image_date, role=role)  # type: ignore[arg-type]
 
 
-async def geochat_answer(prompt: str, settings: Settings) -> tuple[str | None, bool]:
-    """Call Contract A when configured; demo mode remains usable without credentials."""
+def geochat_infer_url(base_or_infer_url: str) -> str:
+    """Accept either a tunnel base URL or the complete Contract A `/infer` URL."""
+    normalized = base_or_infer_url.rstrip("/")
+    return normalized if normalized.endswith("/infer") else f"{normalized}/infer"
+
+
+async def geochat_answer(prompt: str, settings: Settings) -> tuple[str | None, bool, str | None]:
+    """Call Contract A when configured and report an expected tunnel failure safely."""
     if not settings.geochat_url:
-        return None, False
+        return None, False, None
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             # A valid PNG placeholder keeps the Contract A multipart shape intact.
             placeholder = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLJywAAAABJRU5ErkJggg==")
             response = await client.post(
-                f"{settings.geochat_url.rstrip('/')}/infer",
+                geochat_infer_url(settings.geochat_url),
                 data={"prompt": prompt, "task": "vqa"},
                 files={"image": ("scene.png", placeholder, "image/png")},
             )
             response.raise_for_status()
             payload = response.json()
-            return str(payload.get("answer") or ""), bool(payload.get("model_confident"))
+            return str(payload.get("answer") or ""), bool(payload.get("model_confident")), None
     except (httpx.HTTPError, ValueError):
-        return None, False
+        return None, False, "The imagery model is temporarily unavailable."
 
 
 async def handle_query(request: QueryRequest, settings: Settings | None = None) -> QueryResponse:
@@ -96,9 +102,20 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
     if mode == "vqa":
         assert request.date
         single = image("vqa_scene", "sentinel-2", request.date, "single")
-        answer, confident = await geochat_answer(request.query, settings)
+        answer, confident, geochat_error = await geochat_answer(request.query, settings)
         if answer:
             return QueryResponse(mode=mode, answer_text=answer, images=[single], overlay_boxes=[], change_summary=None, confidence_flag="high" if confident else "uncertain", used_cache_fallback=False, error=None)
+        if geochat_error:
+            return QueryResponse(
+                mode=mode,
+                answer_text=geochat_error,
+                images=[single],
+                overlay_boxes=[],
+                change_summary=None,
+                confidence_flag="uncertain",
+                used_cache_fallback=False,
+                error=APIError(code="geochat_unreachable", message=geochat_error),
+            )
         return QueryResponse(mode=mode, answer_text=f"Demo imagery for {request.location.name or 'the requested location'} shows a mixed land and water scene. Configure GEOCHAT_ENDPOINT_URL for a model-grounded answer.", images=[single], overlay_boxes=[OverlayBox(image_id=single.id, label="area of interest", x_min=.25, y_min=.28, x_max=.66, y_max=.68, confidence=.62)], change_summary=None, confidence_flag="medium", used_cache_fallback=False, error=None)
 
     assert request.date_range

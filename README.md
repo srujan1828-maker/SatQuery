@@ -223,7 +223,7 @@ uv run uvicorn app.main:app --reload
 uv run pytest
 ```
 
-Copy `.env.example` to `.env`, then optionally set `GEMINI_API_KEY` for the Gemini query router and `GEOCHAT_ENDPOINT_URL` for the Contract A inference service. The backend loads this local file at startup; it never returns either secret in API responses. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
+Copy `.env.example` to `.env`, then optionally set `GEMINI_API_KEY` for the Gemini query router and `GEOCHAT_ENDPOINT_URL` for the Contract A inference service. In the Render backend's Environment settings, set `GEOCHAT_ENDPOINT_URL` to the live Cloudflare tunnel URL; both `https://tunnel.example` and `https://tunnel.example/infer` are accepted. The backend loads this local file at startup; it never returns either secret in API responses. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
 
 ### Frontend origin / CORS
 

@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.models import QueryRequest
-from app.services import Settings
+from app.services import Settings, geochat_infer_url
 
 client = TestClient(app)
 
@@ -45,3 +45,8 @@ def test_settings_read_optional_service_environment(monkeypatch) -> None:
 def test_query_request_resolves_date_annotation() -> None:
     request = QueryRequest.model_validate({"query": "What is here?", "date": "2024-05-12"})
     assert request.date.isoformat() == "2024-05-12"
+
+
+def test_geochat_endpoint_accepts_base_or_infer_url() -> None:
+    assert geochat_infer_url("https://geochat.example") == "https://geochat.example/infer"
+    assert geochat_infer_url("https://geochat.example/infer/") == "https://geochat.example/infer"
