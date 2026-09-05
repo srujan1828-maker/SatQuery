@@ -108,3 +108,61 @@ export async function submitQuery(requestBody) {
     };
   }
 }
+
+/**
+ * Autocomplete and geocode locations for interactive geospatial map.
+ * Queries /api/geocode on the backend with fallback to OpenStreetMap Nominatim.
+ *
+ * @param {string} query - Location name, address, or coordinates
+ * @returns {Promise<Array>} List of location candidates
+ */
+export async function fetchGeocodeSuggestions(query) {
+  if (!query || !query.trim()) return [];
+  const cleanQ = query.trim();
+
+  // Try backend geocode endpoint first
+  try {
+    const response = await fetch(
+      `${apiBaseUrl}/api/geocode?q=${encodeURIComponent(cleanQ)}`,
+      {
+        headers: {
+          "Accept": "application/json",
+        },
+      }
+    );
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data.results) && data.results.length > 0) {
+        return data.results;
+      }
+    }
+  } catch {
+    // Backend endpoint unavailable, fall through to direct Nominatim lookup
+  }
+
+  // Fallback: direct Nominatim lookup from browser
+  try {
+    const resp = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanQ)}&limit=5&addressdetails=1`,
+      {
+        headers: {
+          "Accept-Language": "en",
+        },
+      }
+    );
+    if (resp.ok) {
+      const results = await resp.json();
+      return results.map((item) => ({
+        name: item.name || item.display_name.split(",")[0],
+        display_name: item.display_name,
+        lat: parseFloat(parseFloat(item.lat).toFixed(4)),
+        lon: parseFloat(parseFloat(item.lon).toFixed(4)),
+        category: (item.type || "Location").replace("_", " "),
+      }));
+    }
+  } catch {
+    // Both failed
+  }
+
+  return [];
+}

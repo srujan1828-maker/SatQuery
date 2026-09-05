@@ -39,9 +39,41 @@ const SUGGESTIONS = {
 function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
   const [query, setQuery] = useState("");
   const [language, setLanguage] = useState("en");
-  const [locationName, setLocationName] = useState("New Delhi");
-  const [latitude, setLatitude] = useState("28.6139");
-  const [longitude, setLongitude] = useState("77.2090");
+  const [locationName, setLocationName] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        return p.get("loc") || p.get("name") || "New Delhi";
+      } catch {
+        // ignore
+      }
+    }
+    return "New Delhi";
+  });
+  const [latitude, setLatitude] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const lat = p.get("lat");
+        if (lat && !isNaN(parseFloat(lat))) return parseFloat(lat).toFixed(4);
+      } catch {
+        // ignore
+      }
+    }
+    return "28.6139";
+  });
+  const [longitude, setLongitude] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const lon = p.get("lon") || p.get("lng");
+        if (lon && !isNaN(parseFloat(lon))) return parseFloat(lon).toFixed(4);
+      } catch {
+        // ignore
+      }
+    }
+    return "77.2090";
+  });
   const [date, setDate] = useState("2024-05-12");
   const [startDate, setStartDate] = useState("2023-05-12");
   const [endDate, setEndDate] = useState("2024-05-12");

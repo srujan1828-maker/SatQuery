@@ -1,7 +1,25 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { fetchGeocodeSuggestions } from "../api/query.js";
 import "./InteractiveMap.css";
+
+function syncUrlParams(lat, lon, name) {
+  if (typeof window === "undefined") return;
+  try {
+    const url = new URL(window.location.href);
+    if (lat != null && lon != null && !isNaN(Number(lat)) && !isNaN(Number(lon))) {
+      url.searchParams.set("lat", Number(lat).toFixed(4));
+      url.searchParams.set("lon", Number(lon).toFixed(4));
+    }
+    if (name) {
+      url.searchParams.set("loc", name);
+    }
+    window.history.replaceState({}, "", url.toString());
+  } catch {
+    // Non-critical URL sync exception
+  }
+}
 
 const PRESET_LOCATIONS = [
   { name: "New Delhi", lat: 28.6139, lon: 77.2090, desc: "Capital urban core & Yamuna river" },
@@ -81,8 +99,13 @@ export default function InteractiveMap({
 
   const [activeLayer, setActiveLayer] = useState("satellite");
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [isSearching, setIsSearching] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(13);
+
+  const searchContainerRef = useRef(null);
 
   const numLat = Number(latitude) || 28.6139;
   const numLon = Number(longitude) || 77.2090;
@@ -119,11 +142,14 @@ export default function InteractiveMap({
       }
     }
 
+    const resolvedName = finalName || locationNameRef.current;
+    syncUrlParams(formattedLat, formattedLon, resolvedName);
+
     if (onLocationSelectRef.current) {
       onLocationSelectRef.current({
         lat: formattedLat,
         lon: formattedLon,
-        name: finalName || locationNameRef.current,
+        name: resolvedName,
       });
     }
   }, []);
@@ -131,6 +157,60 @@ export default function InteractiveMap({
   const updateTargetRef = useRef(updateLocationTarget);
   useEffect(() => {
     updateTargetRef.current = updateLocationTarget;
+  }, [updateLocationTarget]);
+
+  // Debounced location autocomplete lookup
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length < 2) {
+      setSuggestions([]);
+      setIsDropdownOpen(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await fetchGeocodeSuggestions(trimmed);
+        setSuggestions(results);
+        setIsDropdownOpen(results && results.length > 0);
+        setHighlightedIndex(-1);
+      } catch {
+        setSuggestions([]);
+        setIsDropdownOpen(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
+  // Sync initial location from URL parameters if present
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const p = new URLSearchParams(window.location.search);
+      const urlLat = parseFloat(p.get("lat"));
+      const urlLon = parseFloat(p.get("lon") || p.get("lng"));
+      const urlLoc = p.get("loc") || p.get("name") || "";
+      if (!isNaN(urlLat) && !isNaN(urlLon) && urlLat >= -90 && urlLat <= 90 && urlLon >= -180 && urlLon <= 180) {
+        updateLocationTarget(urlLat, urlLon, urlLoc);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.panTo([urlLat, urlLon]);
+        }
+      }
+    } catch {
+      // URL sync error ignored
+    }
   }, [updateLocationTarget]);
 
   // Initialize map instance ONCE on mount
@@ -247,15 +327,56 @@ export default function InteractiveMap({
   }, [numLat, numLon]);
 
   const handlePresetClick = (preset) => {
+    setSearchQuery(preset.name);
+    setIsDropdownOpen(false);
     updateLocationTarget(preset.lat, preset.lon, preset.name);
     if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo([preset.lat, preset.lon], 13, { duration: 1.2 });
     }
   };
 
+  const handleSelectSuggestion = (item) => {
+    setSearchQuery(item.name);
+    setIsDropdownOpen(false);
+    updateLocationTarget(item.lat, item.lon, item.name);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([item.lat, item.lon], 13, { duration: 1.2 });
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (!isDropdownOpen || suggestions.length === 0) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSearch(e);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
+        handleSelectSuggestion(suggestions[highlightedIndex]);
+      } else {
+        handleSearch(e);
+      }
+    } else if (e.key === "Escape") {
+      setIsDropdownOpen(false);
+    }
+  };
+
   const handleSearch = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (e && e.stopPropagation) e.stopPropagation();
+    setIsDropdownOpen(false);
     const q = searchQuery.trim();
     if (!q) return;
 
@@ -275,6 +396,17 @@ export default function InteractiveMap({
 
     setIsSearching(true);
     try {
+      // First try backend autocomplete for fast resolution
+      const results = await fetchGeocodeSuggestions(q);
+      if (results && results.length > 0) {
+        const target = results[0];
+        updateLocationTarget(target.lat, target.lon, target.name);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo([target.lat, target.lon], 13, { duration: 1.5 });
+        }
+        return;
+      }
+
       const resp = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`,
         {
@@ -284,9 +416,9 @@ export default function InteractiveMap({
         }
       );
       if (resp.ok) {
-        const results = await resp.json();
-        if (results && results.length > 0) {
-          const target = results[0];
+        const nominatimResults = await resp.json();
+        if (nominatimResults && nominatimResults.length > 0) {
+          const target = nominatimResults[0];
           const lat = parseFloat(target.lat);
           const lon = parseFloat(target.lon);
           updateLocationTarget(lat, lon, target.display_name.split(",")[0]);
@@ -325,21 +457,53 @@ export default function InteractiveMap({
           })}
         </div>
 
-        <div className="map-search-bar">
-          <input
-            type="text"
-            className="map-search-input"
-            placeholder="Search place, city, or coordinates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.stopPropagation();
-                handleSearch(e);
-              }
-            }}
-          />
+        <div className="map-search-bar" ref={searchContainerRef}>
+          <div className="map-search-input-wrapper">
+            <input
+              type="text"
+              className="map-search-input"
+              placeholder="Search place, city, or coordinates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setIsDropdownOpen(true);
+              }}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+            />
+            {isDropdownOpen && suggestions.length > 0 && (
+              <div className="map-autocomplete-dropdown" role="listbox">
+                {suggestions.map((item, idx) => (
+                  <div
+                    key={`${item.lat}-${item.lon}-${idx}`}
+                    className={`autocomplete-item ${highlightedIndex === idx ? "highlighted" : ""}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      handleSelectSuggestion(item);
+                    }}
+                    onMouseEnter={() => setHighlightedIndex(idx)}
+                    role="option"
+                    aria-selected={highlightedIndex === idx}
+                  >
+                    <div className="autocomplete-item-row">
+                      <span className="autocomplete-name">{item.name}</span>
+                      <span className="autocomplete-category">{item.category || "Place"}</span>
+                    </div>
+                    <div className="autocomplete-details">
+                      <span className="autocomplete-coords">
+                        {item.lat.toFixed(4)}°N, {item.lon.toFixed(4)}°E
+                      </span>
+                      {item.display_name && (
+                        <span className="autocomplete-address" title={item.display_name}>
+                          {item.display_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             className="map-search-btn"

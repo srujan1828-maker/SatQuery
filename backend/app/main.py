@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 
 from app.models import QueryRequest, QueryResponse
-from app.services import SENTINEL_TILE_URL, Settings, handle_query
+from app.services import SENTINEL_TILE_URL, Settings, geocode_search, handle_query
 
 app = FastAPI(title="SatQuery API", version="0.1.0")
 
@@ -36,6 +36,12 @@ def unavailable_sentinel_tile() -> Response:
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/geocode")
+async def geocode(q: str = "") -> list[dict]:
+    """Search and autocomplete locations for interactive geospatial map."""
+    return await geocode_search(q)
 
 
 @app.post("/api/query", response_model=QueryResponse)

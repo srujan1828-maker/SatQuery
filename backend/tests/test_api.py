@@ -271,3 +271,13 @@ def test_fusion_mode_requires_location() -> None:
     assert body["error"]["code"] == "invalid_query"
 
 
+def test_geocode_endpoint_returns_autocomplete_suggestions() -> None:
+    response = client.get("/api/geocode?q=delhi")
+    assert response.status_code == 200
+    suggestions = response.json()
+    assert isinstance(suggestions, list)
+    assert len(suggestions) > 0
+    assert any("delhi" in s["name"].lower() for s in suggestions)
+    assert "lat" in suggestions[0] and "lon" in suggestions[0]
+
+
