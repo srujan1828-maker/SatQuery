@@ -6,7 +6,8 @@ import "./QueryPanel.css";
 const modeLabels = {
   vqa: "Visual Question Answering",
   change_detection: "Change Detection",
-  fusion_demo: "Fusion Demo",
+  fusion: "Multimodal Sensor Fusion",
+  fusion_demo: "Multimodal Sensor Fusion",
 };
 
 const SUGGESTIONS = {
@@ -21,9 +22,17 @@ const SUGGESTIONS = {
     "Identify new urban construction or land clearance between dates.",
     "Analyze vegetation degradation or seasonal cropland difference.",
   ],
+  fusion: [
+    "Detect flood extent and standing water by fusing optical and SAR radar.",
+    "Analyze urban building density using optical imagery and radar double-bounce backscatter.",
+    "Penetrate cloud cover using Sentinel-1 C-band SAR over agricultural terrain.",
+    "Analyze coastal port infrastructure and maritime vessels with radar-optical fusion.",
+  ],
   fusion_demo: [
-    "Analyze flood extent by fusing optical and radar data.",
-    "Demonstrate Sentinel-1 SAR cloud penetration over inundated areas.",
+    "Detect flood extent and standing water by fusing optical and SAR radar.",
+    "Analyze urban building density using optical imagery and radar double-bounce backscatter.",
+    "Penetrate cloud cover using Sentinel-1 C-band SAR over agricultural terrain.",
+    "Analyze coastal port infrastructure and maritime vessels with radar-optical fusion.",
   ],
 };
 
@@ -38,7 +47,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
   const [endDate, setEndDate] = useState("2024-05-12");
   const [showMap, setShowMap] = useState(true);
 
-  const isFusion = mode === "fusion_demo";
+  const isFusion = mode === "fusion" || mode === "fusion_demo";
   const isChangeDetection = mode === "change_detection";
 
   const handleLocationSelect = ({ lat, lon, name }) => {
@@ -301,7 +310,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
         <div className="query-form__footer">
           <p>
             {isFusion
-              ? "Multimodal fusion demonstration using aligned Sentinel-2 (optical) and Sentinel-1 (radar)."
+              ? "Multimodal earth observation synthesizing ESA Sentinel-2 (optical) and Sentinel-1 (C-band SAR microwave radar)."
               : "Directly queries ESA Sentinel-2 MSI L2A surface reflectance imagery."}
           </p>
 
@@ -313,7 +322,7 @@ function QueryPanel({ mode, onResult, onLoadingChange, isLoading = false }) {
             {isLoading
               ? "Retrieving & Analyzing..."
               : isFusion
-                ? "Run Fusion Demo"
+                ? "Analyze Sensor Fusion"
                 : mode === "change_detection"
                   ? "Detect Temporal Change"
                   : "Ask SatQuery"}

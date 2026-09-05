@@ -8,12 +8,13 @@ import HonestyPanel from "./components/HonestyPanel";
 
 import "./App.css";
 
-const modes = ["vqa", "change_detection", "fusion_demo"];
+const modes = ["vqa", "change_detection", "fusion"];
 
 const modeLabels = {
   vqa: "Visual Question Answering",
   change_detection: "Change Detection",
-  fusion_demo: "Fusion Demo",
+  fusion: "Multimodal Sensor Fusion",
+  fusion_demo: "Multimodal Sensor Fusion",
 };
 
 function App() {
@@ -47,7 +48,7 @@ function App() {
       }
     }
 
-    if (data.mode === "fusion_demo") {
+    if (data.mode === "fusion" || data.mode === "fusion_demo") {
       const optical = data.images.find((image) => image.role === "optical");
       const radar = data.images.find((image) => image.role === "radar");
       if (optical && radar) {
@@ -88,7 +89,7 @@ function App() {
           {modeLabels[data.mode] || "ANSWER"}
         </div>
 
-        <h2>{data.mode === "fusion_demo" ? "Takeaway Synthesis" : "Answer"}</h2>
+        <h2>{data.mode === "fusion" || data.mode === "fusion_demo" ? "Multi-Sensor Synthesis" : "Answer"}</h2>
 
         <p className="answer-text">
           {data.answer_text}
@@ -183,14 +184,14 @@ function App() {
       );
     }
 
-    if (data.mode === "fusion_demo") {
+    if (data.mode === "fusion" || data.mode === "fusion_demo") {
       return (
         <>
           <section className="visual-section">
             <div className="section-header">
               <div>
-                <p className="eyebrow">GUIDED FUSION NARRATIVE</p>
-                <h2>Optical and Radar Evidence</h2>
+                <p className="eyebrow">MULTIMODAL SENSOR FUSION</p>
+                <h2>Aligned Optical & SAR Radar Evidence</h2>
               </div>
             </div>
 

@@ -75,10 +75,10 @@ def positive_int_environment(name: str, default: int) -> int:
 def route_query(request: QueryRequest) -> Mode:
     """Small, predictable router used until the optional external router is connected."""
     if request.mode:
-        return request.mode
+        return "fusion" if request.mode == "fusion_demo" else request.mode
     query = request.query.casefold()
-    if any(term in query for term in ("fusion", "radar", "sar", "flood demo", "multisensor")):
-        return "fusion_demo"
+    if any(term in query for term in ("fusion", "radar", "sar", "flood demo", "multisensor", "optical and radar")):
+        return "fusion"
     if request.date_range or any(term in query for term in ("change", "compare", "before", "after", "difference")):
         return "change_detection"
     return "vqa"
@@ -231,15 +231,32 @@ async def sentinel_scene(location: Location, target_date: date) -> SentinelScene
 class Sentinel1Scene:
     id: str
     captured_on: date
-    preview_url: str
+    tile_url: str
+    preview_url: str | None = None
+
+
+def sentinel1_tile_url(scene_id: str, location: Location, zoom: int = 14) -> str:
+    """Build a no-key Planetary Computer VV SAR radar tile URL for a Sentinel-1 scene."""
+    tiles_per_axis = 2 ** zoom
+    tile_x = int((location.lon + 180) / 360 * tiles_per_axis)
+    tile_y = int((1 - asinh(tan(radians(location.lat))) / pi) / 2 * tiles_per_axis)
+    parameters = urlencode(
+        {
+            "collection": "sentinel-1-grd",
+            "item": scene_id,
+            "assets": "vv",
+            "format": "png",
+        }
+    )
+    return f"{SENTINEL_TILE_URL}/{zoom}/{tile_x}/{tile_y}@2x?{parameters}"
 
 
 async def sentinel1_scene(location: Location, target_date: date) -> Sentinel1Scene | None:
-    """Find a nearby Sentinel-1 SAR (GRD) observation with rendered radar backscatter preview."""
+    """Find a nearby Sentinel-1 SAR (GRD) observation with pixel-aligned microwave radar tile."""
     today = date.today()
     effective_target_date = min(target_date, today)
-    start = effective_target_date - timedelta(days=35)
-    end = min(today, effective_target_date + timedelta(days=35))
+    start = effective_target_date - timedelta(days=45)
+    end = min(today, effective_target_date + timedelta(days=45))
     if start > end:
         start = end - timedelta(days=30)
 
@@ -251,29 +268,56 @@ async def sentinel1_scene(location: Location, target_date: date) -> Sentinel1Sce
         "limit": 10,
     }
 
+    features: list[dict] = []
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.post(SENTINEL_STAC_SEARCH_URL, json=payload)
             response.raise_for_status()
             features = response.json().get("features", [])
-            for item in features:
-                preview = item.get("assets", {}).get("rendered_preview", {}).get("href")
-                if preview:
-                    dt_str = item.get("properties", {}).get("datetime", "")
-                    captured_on = (
-                        datetime.fromisoformat(dt_str.replace("Z", "+00:00")).date()
-                        if dt_str
-                        else effective_target_date
-                    )
-                    return Sentinel1Scene(
-                        id=item["id"],
-                        captured_on=captured_on,
-                        preview_url=preview,
-                    )
     except Exception as error:
         logger.warning("Unable to search Sentinel-1 SAR scenes: %s", error)
 
-    return None
+    if not features:
+        return None
+
+    # Pre-verify tile accessibility on candidate scenes
+    async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
+        for item in features[:5]:
+            scene_id = item["id"]
+            dt_str = item.get("properties", {}).get("datetime", "")
+            captured_on = (
+                datetime.fromisoformat(dt_str.replace("Z", "+00:00")).date()
+                if dt_str
+                else effective_target_date
+            )
+            tile_url = sentinel1_tile_url(scene_id, location)
+            preview_url = item.get("assets", {}).get("rendered_preview", {}).get("href")
+            try:
+                check_resp = await client.get(tile_url)
+                if check_resp.status_code == 200 and len(check_resp.content) > 1000:
+                    return Sentinel1Scene(
+                        id=scene_id,
+                        captured_on=captured_on,
+                        tile_url=tile_url,
+                        preview_url=preview_url,
+                    )
+            except Exception:
+                continue
+
+    # Fallback to top candidate
+    best = features[0]
+    dt_str = best.get("properties", {}).get("datetime", "")
+    captured_on = (
+        datetime.fromisoformat(dt_str.replace("Z", "+00:00")).date()
+        if dt_str
+        else effective_target_date
+    )
+    return Sentinel1Scene(
+        id=best["id"],
+        captured_on=captured_on,
+        tile_url=sentinel1_tile_url(best["id"], location),
+        preview_url=best.get("assets", {}).get("rendered_preview", {}).get("href"),
+    )
 
 
 def image(
@@ -478,30 +522,32 @@ async def geochat_answer(
 async def handle_query(request: QueryRequest, settings: Settings | None = None) -> QueryResponse:
     settings = settings or Settings.from_environment()
     mode = route_query(request)
-    if mode == "fusion_demo":
+    if mode in ("fusion", "fusion_demo"):
+        response_mode = request.mode or mode
         if request.location is not None:
             target_date = request.date or date.today()
             optical_scene = await sentinel_scene(request.location, target_date)
             radar_scene = await sentinel1_scene(request.location, target_date)
 
-            optical_tile = optical_scene.tile_url if optical_scene else None
-            optical_date = optical_scene.captured_on if optical_scene else target_date
-            radar_url = radar_scene.preview_url if radar_scene else None
+            if optical_scene is None:
+                return imagery_unavailable(response_mode, "No low-cloud Sentinel-2 optical image was available near the requested date.")
+
+            optical_tile = optical_scene.tile_url
+            optical_date = optical_scene.captured_on
+            radar_tile = radar_scene.tile_url if radar_scene else None
             radar_date = radar_scene.captured_on if radar_scene else target_date
 
             optical = image("fusion_optical", "sentinel-2", optical_date, "optical", optical_tile)
-            radar = image("fusion_radar", "sentinel-1", radar_date, "radar", radar_url)
+            radar = image("fusion_radar", "sentinel-1", radar_date, "radar", radar_tile)
 
-            optical_model_image, optical_content_type = (
-                await imagery_for_inference(optical_tile) if optical_tile else (inference_image(), "image/png")
-            )
+            optical_model_image, optical_content_type = await imagery_for_inference(optical_tile)
             radar_model_image, radar_content_type = (
-                await imagery_for_inference(radar_url) if radar_url else (inference_image(), "image/png")
+                await imagery_for_inference(radar_tile) if radar_tile else (inference_image(), "image/png")
             )
 
             loc_label = request.location.name or f"({request.location.lat:.4f}, {request.location.lon:.4f})"
             fusion_prompt = (
-                f"Multimodal satellite fusion analysis combining Sentinel-2 optical ({optical_date}) and "
+                f"Multimodal satellite sensor fusion analysis combining Sentinel-2 optical ({optical_date}) and "
                 f"Sentinel-1 SAR radar ({radar_date}) over {loc_label}. Question: {request.query}"
             )
 
@@ -520,7 +566,7 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
                         OverlayBox(image_id=optical.id, label="fusion target zone", x_min=0.25, y_min=0.25, x_max=0.75, y_max=0.75, confidence=0.85)
                     ]
                 return QueryResponse(
-                    mode=mode,
+                    mode=response_mode,
                     answer_text=answer,
                     images=[optical, radar],
                     overlay_boxes=overlay_boxes,
@@ -549,7 +595,7 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
                         OverlayBox(image_id=optical.id, label="optical-radar aligned zone", x_min=0.25, y_min=0.25, x_max=0.75, y_max=0.75, confidence=0.88)
                     ]
                     return QueryResponse(
-                        mode=mode,
+                        mode=response_mode,
                         answer_text=g_answer,
                         images=[optical, radar],
                         overlay_boxes=overlay_boxes,
@@ -561,7 +607,7 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
 
             if geochat_error and settings.geochat_url:
                 return QueryResponse(
-                    mode=mode,
+                    mode=response_mode,
                     answer_text=geochat_error,
                     images=[optical, radar],
                     overlay_boxes=[],
@@ -580,7 +626,7 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
                 OverlayBox(image_id=radar.id, label="SAR radar backscatter target", x_min=0.25, y_min=0.30, x_max=0.70, y_max=0.75, confidence=0.89),
             ]
             return QueryResponse(
-                mode=mode,
+                mode=response_mode,
                 answer_text=dynamic_answer,
                 images=[optical, radar],
                 overlay_boxes=boxes,
@@ -590,7 +636,10 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
                 error=None,
             )
 
-        # Fallback when location is not provided (e.g. quick demo / automated tests)
+        # Fallback when location is not provided
+        if response_mode == "fusion":
+            return validation_error(response_mode, "A location is required for multimodal sensor fusion.")
+
         optical = image("fusion_optical", "sentinel-2", date(2024, 5, 12), "optical")
         radar = image("fusion_radar", "sentinel-1", date(2024, 5, 13), "radar")
         boxes = [
@@ -598,7 +647,7 @@ async def handle_query(request: QueryRequest, settings: Settings | None = None) 
             OverlayBox(image_id="fusion_radar", label="SAR specular reflection", x_min=0.25, y_min=0.30, x_max=0.70, y_max=0.75, confidence=0.91),
         ]
         return QueryResponse(
-            mode=mode,
+            mode=response_mode,
             answer_text="Multi-sensor synthesis: The Sentinel-2 optical observation reveals extensive lowland inundation and turbidity, while the Sentinel-1 Synthetic Aperture Radar (SAR) penetrates prevailing cloud cover, corroborating open water through specular radar backscatter attenuation.",
             images=[optical, radar],
             overlay_boxes=boxes,

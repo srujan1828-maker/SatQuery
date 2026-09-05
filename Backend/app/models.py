@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-Mode = Literal["vqa", "change_detection", "fusion_demo"]
+Mode = Literal["vqa", "change_detection", "fusion", "fusion_demo"]
 Confidence = Literal["high", "medium", "low", "uncertain"]
 
 

@@ -224,3 +224,50 @@ def test_change_detection_routes_to_gemini_if_geochat_unconfigured(monkeypatch) 
     assert "Gemini Vision detected" in body["answer_text"]
     assert body["confidence_flag"] == "high"
 
+
+def test_fusion_mode_with_location_queries_optical_and_radar(monkeypatch) -> None:
+    async def optical_scene(*_args: object) -> SentinelScene:
+        return SentinelScene("S2A_TEST_OPTICAL", date(2024, 5, 12), "https://imagery.example/optical.png")
+
+    async def radar_scene(*_args: object) -> Sentinel1Scene:
+        return Sentinel1Scene("S1A_TEST_RADAR", date(2024, 5, 13), "https://imagery.example/radar.png")
+
+    async def imagery(*_args: object) -> tuple[bytes, str]:
+        return inference_image(), "image/png"
+
+    monkeypatch.setattr("app.services.sentinel_scene", optical_scene)
+    monkeypatch.setattr("app.services.sentinel1_scene", radar_scene)
+    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
+
+    response = client.post(
+        "/api/query",
+        json={
+            "query": "Synthesize optical and radar features",
+            "location": {"lat": 28.6139, "lon": 77.2090, "name": "New Delhi"},
+            "date": "2024-05-12",
+            "mode": "fusion",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "fusion"
+    assert body["used_cache_fallback"] is False
+    roles = [img["role"] for img in body["images"]]
+    assert "optical" in roles
+    assert "radar" in roles
+
+
+def test_fusion_mode_requires_location() -> None:
+    response = client.post(
+        "/api/query",
+        json={
+            "query": "Synthesize optical and radar features",
+            "mode": "fusion",
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "fusion"
+    assert body["error"]["code"] == "invalid_query"
+
+
