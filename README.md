@@ -225,6 +225,10 @@ uv run pytest
 
 Copy `.env.example` to `.env`, then optionally set `GEMINI_API_KEY` for the Gemini query router and `GEOCHAT_ENDPOINT_URL` for the Contract A inference service. The backend loads this local file at startup; it never returns either secret in API responses. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
 
+### Frontend origin / CORS
+
+Set `FRONTEND_URL` to the complete deployed frontend origin (for example, `https://satquery-frontend.onrender.com`) when the browser frontend and API are deployed on different domains. The backend allows `GET`, `POST`, and preflight `OPTIONS` requests from that origin. It uses localhost port 3000 origins only when `FRONTEND_URL` is not set, which is appropriate for local development or same-origin hosting.
+
 ## Run with Docker
 
 ```bash

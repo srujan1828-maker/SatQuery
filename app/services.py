@@ -17,6 +17,7 @@ load_dotenv()
 class Settings:
     geochat_url: str | None
     gemini_api_key: str | None
+    frontend_url: str | None
     demo_mode: bool
 
     @classmethod
@@ -25,6 +26,7 @@ class Settings:
         return cls(
             geochat_url=os.getenv("GEOCHAT_ENDPOINT_URL") or None,
             gemini_api_key=os.getenv("GEMINI_API_KEY") or None,
+            frontend_url=os.getenv("FRONTEND_URL", "").rstrip("/") or None,
             demo_mode=os.getenv("DEMO_MODE", "true").lower() == "true",
         )
 
