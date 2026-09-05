@@ -120,7 +120,7 @@ Get GeoChat-7B running and reachable from outside Kaggle, and build the query ro
 2. Wrap inference in FastAPI per Contract A. Test with `curl` from your own laptop before telling anyone it's ready.
 3. Start the Cloudflare Tunnel, confirm the public URL reaches `/infer` from a machine outside Kaggle.
 4. Hand the tunnel URL to Person 2 and post it in the shared channel — **every time it changes**, not just once.
-5. Build the query router: Anthropic API + tool/function calling, 3 tools (`call_vqa`, `call_change_detection`, `call_fusion_demo`), reads `query` (+ `language` if given) and decides which one to call. Router output must map cleanly onto Contract B's `mode` field — literally return one of the three mode strings, nothing else.
+5. Build the query router: Gemini API + tool/function calling, 3 tools (`call_vqa`, `call_change_detection`, `call_fusion_demo`), reads `query` (+ `language` if given) and decides which one to call. Router output must map cleanly onto Contract B's `mode` field — literally return one of the three mode strings, nothing else.
 6. Support English and Hindi in the same router prompt — no separate translation step or library.
 7. Pre-fetch and cache the fusion-demo scenario (image pair + GeoChat output) and hand the cached files to Person 2 for the fallback path.
 
@@ -157,7 +157,7 @@ Build everything behind Contract B — the GEE data layer, the three pipelines, 
 ## Constraints / rules
 - **Never** change Contract B's field names, types, or the fixed `mode` enum without updating Part 0 and notifying Person 3 first.
 - Never send a raw `500` for an expected failure (tunnel down, GEE quota, no data for a location) — always populate `error` and a plain-language `answer_text` per Contract B.
-- Keys/secrets (`ANTHROPIC_API_KEY`, `GEOCHAT_ENDPOINT_URL`, GEE credentials) live only in `.env`, never hardcoded, never committed.
+- Keys/secrets (`GEMINI_API_KEY`, `GEOCHAT_ENDPOINT_URL`, GEE credentials) live only in `.env`, never hardcoded, never committed.
 - Don't build any pipeline beyond the three listed in Section 2 of the project spec, even if GEE makes something else look easy to add.
 - Run integration checks continuously, not just at the end: every time Person 1's tunnel URL changes or Person 3 changes something touching the response shape, re-verify the full chain works, don't wait for a big merge at the deadline.
 
@@ -208,3 +208,28 @@ Build the full Section 4 UI, working against the Contract C mock from day one so
 2. Nobody sends a raw stack-trace/500 across a contract boundary for an expected failure — always shape it into the agreed error format.
 3. Daily short sync: each person states (a) what changed in their contract-facing behavior, if anything, (b) what's currently blocking them. This catches drift early instead of at a big-bang merge.
 4. Full end-to-end rehearsal (live tunnel + real backend + real frontend, including deliberately killing the tunnel once to confirm the fusion-demo fallback works) happens **before** the actual demo day, not during it.
+
+---
+
+# Implementation status
+
+This repository now includes a runnable FastAPI implementation of Contract B, Contract C mock responses in `mocks/`, and API tests. It starts in deterministic demo mode so that the frontend can develop and rehearse without Earth Engine or GeoChat credentials. Set `GEOCHAT_ENDPOINT_URL` in `.env` to call a Contract A service; expected request validation failures are still returned as Contract B-shaped `200` responses with an `error` object.
+
+## Run locally
+
+```bash
+uv sync --extra test
+uv run uvicorn app.main:app --reload
+uv run pytest
+```
+
+Copy `.env.example` to `.env`, then optionally set `GEMINI_API_KEY` for the Gemini query router and `GEOCHAT_ENDPOINT_URL` for the Contract A inference service. The backend loads this local file at startup; it never returns either secret in API responses. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
+
+## Run with Docker
+
+```bash
+docker build -t satquery .
+docker run --rm -p 8000:8000 --env-file .env satquery
+```
+
+The image starts the API on `0.0.0.0` and honors the platform-provided `PORT` environment variable (default: `8000`).
