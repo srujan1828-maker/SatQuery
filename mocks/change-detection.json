@@ -1,0 +1,25 @@
+{
+  "mode": "change_detection",
+  "answer_text": "The imagery shows a noticeable change between the two dates.",
+  "images": [
+    {
+      "id": "img_before_1",
+      "url": "/mock-images/before.svg",
+      "sensor": "sentinel-2",
+      "date": "2026-05-01",
+      "role": "before"
+    },
+    {
+      "id": "img_after_1",
+      "url": "/mock-images/after.svg",
+      "sensor": "sentinel-2",
+      "date": "2026-06-01",
+      "role": "after"
+    }
+  ],
+  "overlay_boxes": [],
+  "change_summary": "The area shows a noticeable change between the two observation dates.",
+  "confidence_flag": "medium",
+  "used_cache_fallback": false,
+  "error": null
+}

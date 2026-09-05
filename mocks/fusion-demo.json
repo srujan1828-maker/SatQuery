@@ -1,0 +1,25 @@
+{
+  "mode": "fusion_demo",
+  "answer_text": "The optical and radar observations together provide complementary information about the demonstrated scenario.",
+  "images": [
+    {
+      "id": "img_optical_1",
+      "url": "/mock-images/optical.svg",
+      "sensor": "sentinel-2",
+      "date": "2026-06-01",
+      "role": "optical"
+    },
+    {
+      "id": "img_radar_1",
+      "url": "/mock-images/radar.svg",
+      "sensor": "sentinel-1",
+      "date": "2026-06-01",
+      "role": "radar"
+    }
+  ],
+  "overlay_boxes": [],
+  "change_summary": null,
+  "confidence_flag": "high",
+  "used_cache_fallback": false,
+  "error": null
+}

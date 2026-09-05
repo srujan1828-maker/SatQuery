@@ -1,0 +1,164 @@
+.query-panel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.query-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.query-panel__header h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.query-panel__mode {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--elevated);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.query-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.query-field {
+  min-width: 0;
+}
+
+.query-field--full {
+  grid-column: 1 / -1;
+}
+
+.query-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.query-field input,
+.query-field select,
+.query-field textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--strong-border);
+  border-radius: 10px;
+  background: var(--elevated);
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.query-field input,
+.query-field select {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+.query-field textarea {
+  min-height: 110px;
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.query-field input::placeholder,
+.query-field textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.query-field input:focus,
+.query-field select:focus,
+.query-field textarea:focus {
+  border-color: #5a5a5a;
+  background: #242424;
+}
+
+.query-form__footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 8px;
+}
+
+.query-form__footer p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.query-submit {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--strong-border);
+  border-radius: 10px;
+  background: var(--elevated);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.query-submit:hover {
+  border-color: #555555;
+  background: #292929;
+}
+
+.query-submit:active {
+  transform: translateY(1px);
+}
+
+.query-submit:focus-visible {
+  outline: 2px solid #737373;
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .query-panel {
+    padding: 18px;
+  }
+
+  .query-form {
+    grid-template-columns: 1fr;
+  }
+
+  .query-field--full {
+    grid-column: auto;
+  }
+
+  .query-form__footer {
+    grid-column: auto;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .query-submit {
+    width: 100%;
+  }
+}
