@@ -208,3 +208,19 @@ Build the full Section 4 UI, working against the Contract C mock from day one so
 2. Nobody sends a raw stack-trace/500 across a contract boundary for an expected failure — always shape it into the agreed error format.
 3. Daily short sync: each person states (a) what changed in their contract-facing behavior, if anything, (b) what's currently blocking them. This catches drift early instead of at a big-bang merge.
 4. Full end-to-end rehearsal (live tunnel + real backend + real frontend, including deliberately killing the tunnel once to confirm the fusion-demo fallback works) happens **before** the actual demo day, not during it.
+
+---
+
+# Implementation status
+
+This repository now includes a runnable FastAPI implementation of Contract B, Contract C mock responses in `mocks/`, and API tests. It starts in deterministic demo mode so that the frontend can develop and rehearse without Earth Engine or GeoChat credentials. Set `GEOCHAT_ENDPOINT_URL` in `.env` to call a Contract A service; expected request validation failures are still returned as Contract B-shaped `200` responses with an `error` object.
+
+## Run locally
+
+```bash
+uv sync --extra test
+uv run uvicorn app.main:app --reload
+uv run pytest
+```
+
+See `.env.example` for configuration. Live Earth Engine acquisition and deployment credentials remain environment-specific and must not be committed.
