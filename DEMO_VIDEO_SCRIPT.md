@@ -1,106 +1,124 @@
-# SatQuery: 2-to-3 Minute Prototype Demo Video Script
+# SatQuery: Humanized 2.5–3 Minute Live Demo Video Script
 
-**Target Duration**: 2 Minutes 45 Seconds (165 Seconds)  
-**Speaker Tone**: Confident, technical, dynamic, professional (Smart India Hackathon / Demo Pitch style)  
-**Format**: Single presenter on camera + full-screen browser screencast (1080p 60fps)
-
----
-
-## Pre-Recording Checklist & Setup
-1. **Screen Resolution**: 1920x1080 (100% DPI zoom).
-2. **Browser Window**: Google Chrome open to `http://localhost:5173/` in full-screen (`F11`).
-3. **Backend Server**: Ensure FastAPI backend is active on `http://127.0.0.1:8000`.
-4. **Microphone**: Clean audio without background noise.
-5. **Preset Tabs**: Open one tab ready on the home page, and have a second tab pre-loaded with a query result if you want instantaneous transitions.
+**Target Duration**: 2 Minutes 30 Seconds – 2 Minutes 45 Seconds  
+**Tone & Style**: Natural, conversational, energetic, and authentic — sounds like a passionate developer/founder walking someone through a live tool, not a robotic marketing pitch.  
+**Video Setup**: Picture-in-picture webcam in the corner + full-screen browser at `http://localhost:5173` (1080p 60fps).
 
 ---
 
-## Video Script & Storyboard
+## 🎬 Master Video Script & Screen Action Timeline
 
 ```
-TIMECODE        VISUAL ON SCREEN                                   SPEAKER VOICEOVER / SCRIPT
-===================================================================================================================================
-[0:00 - 0:25]   [FULL SCREEN / WEBCAM WITH LOGO OVERLAY]          "Hello everyone! Satellite imagery is one of the most powerful
-                Camera on presenter, then cuts to the              tools for disaster management, defense, and urban planning.
-                SatQuery web application landing page.             Yet today, querying Earth Observation data requires specialized
-                                                                   GIS software, complex band combinations, and massive processing
-                Mouse cursor hovers smoothly over the              overhead. Worse still, when floods or monsoons strike, optical
-                clean dark-themed interface.                       satellites are blinded by heavy cloud cover.
-                                                                   
-                                                                   Meet SatQuery — an intelligent multimodal satellite intelligence
-                                                                   platform that lets anyone ask questions about our planet in natural
-                                                                   language, track temporal changes, and fuse optical and SAR radar
-                                                                   imagery with zero hallucination."
+TIME            WHAT'S ON SCREEN                                    WHAT YOU SAY (NATURAL, SPOKEN SCRIPT)
+=========================================================================================================================================
+0:00 - 0:25     [WEBCAM FULL SCREEN / CUT TO CLEAN SATQUERY UI]     "Hey everyone! 
+(25 sec)                                                            
+                Start with camera on you (smiling, high energy).    Imagine a flood strikes a district. First responders need to know 
+                In 5 seconds, cut to full screen showing the sleek  within minutes: Which roads are cut off? Where is the water rising? 
+                SatQuery dark interface.
+                                                                    The problem? When you pull up regular satellite imagery during a monsoon,
+                Cursor moves naturally across the top navbar.       all you see is a thick wall of clouds. On top of that, extracting useful 
+                                                                    insights usually requires GIS experts and hours of manual processing.
 
------------------------------------------------------------------------------------------------------------------------------------
-[0:25 - 0:55]   [SCREEN RECORDING: INTERACTIVE MAP & AUTOCOMPLETE] "Let's start with geospatial targeting. In our Interactive Map,
-                Presenter clicks the search bar in the map         we've integrated a high-performance, Google Maps-style location
-                toolbar and types: "Kedarnath".                    autocomplete typeahead.
-                
-                The autocomplete dropdown pops up showing          As I type 'Kedarnath', SatQuery instantly resolves the Himalayan
-                preset info, coordinates (30.73°N, 79.06°E).       flood monitoring zone. With one click, our Leaflet map smoothly
-                
-                Presenter presses Enter; map flies to Kedarnath.   flies to the target coordinates, setting our Sentinel-2 observation
-                Camera zooms into the browser address bar to       footprint.
-                highlight the synchronized URL:
-                `?lat=30.7346&lon=79.0669&loc=Kedarnath`          Notice how the browser URL updates in real time — exactly like Google
-                                                                   Maps. You can share this exact deep link with any response team,
-                                                                   and the platform automatically hydrates the location state."
+                                                                    We wanted to fix that. 
+                                                                    
+                                                                    This is SatQuery — an intelligent platform where anyone can ask questions 
+                                                                    about our planet in plain language, track land changes over time, and 
+                                                                    fuse optical vision with microwave radar to see straight through clouds."
 
------------------------------------------------------------------------------------------------------------------------------------
-[0:55 - 1:35]   [SCREEN RECORDING: VQA & CHANGE DETECTION]        "Now, let's explore Visual Question Answering and Temporal Change.
-                Presenter switches to Visual Question Answering,   
-                clicks preset 'New Delhi', and selects chip:       In VQA mode, we query ESA Sentinel-2 MSI surface reflectance data.
-                '+ Detect surface water bodies & channels'.        SatQuery retrieves the clearest 10-meter resolution scene and passes
+-----------------------------------------------------------------------------------------------------------------------------------------
+0:25 - 0:55     [SCREEN: INTERACTIVE MAP & AUTOCOMPLETE]            "Let’s jump straight into the live prototype.
+(30 sec)                                                            
+                Click the search bar in the map toolbar.            To make targeting effortless, we built a Google Maps-style autocomplete 
+                                                                    right into our geospatial map. 
+                Type: "kedar"
                 
-                Clicks 'Ask SatQuery'. Result loads with           it to our Vision Language pipeline. It highlights water bodies with
-                detailed answer and cyan bounding boxes.           precise bounding boxes and provides calibrated confidence metrics.
-                
-                Presenter toggles 'Change Detection' mode.         Next, in Change Detection mode, we pick a baseline date from 2023
-                Selects 2023 vs 2024 dates.                        and an observation date from 2024. Our interactive comparison slider
-                Drags the horizontal Before/After swipe slider.    lets us swipe between observations, visually isolating urban expansion
-                                                                   and flood line displacement across time."
+                The dropdown instantly pops up with 'Kedarnath',    Watch — as I start typing 'kedar', SatQuery immediately suggests Kedarnath 
+                category badge, and coordinates (30.73°N, 79.06°E). with exact coordinates and terrain context. 
 
------------------------------------------------------------------------------------------------------------------------------------
-[1:35 - 2:20]   [SCREEN RECORDING: MULTIMODAL SENSOR FUSION]      "Now for our core breakthrough: Multimodal Sensor Fusion.
-                Presenter clicks 'Sensor Fusion' in the top bar.   
-                Selects prompt: '+ Detect flood extent and         When monsoons or cloud cover obscure optical satellites, SatQuery
-                standing water by fusing optical and SAR radar'.   dynamically pairs Sentinel-2 multispectral imagery with active
-                                                                   Sentinel-1 C-Band Synthetic Aperture Radar.
-                Clicks 'Analyze Sensor Fusion'. The scanner ring   
-                animates, then the 4-mode Fusion Inspector appears. Because microwave radar pulses at 5.405 GHz penetrate clouds
-                                                                   and night, smooth water surfaces produce specular radar attenuation,
-                1. Presenter drags the 'Split Swipe' handle        appearing deep black, while concrete structures bounce back bright.
-                   left and right.
-                2. Clicks 'Opacity Blend' tab, moves slider to     With our 4-mode Fusion Inspector, analysts can use the Split Swipe
-                   50/50, then clicks 'Radar Only'.                divider, cross-fade opacity with continuous blending, view side-by-side
-                3. Clicks 'Color Composite' false-color view.      comparisons, or render false-color radar-optical composites.
-                4. Scrolls down to show the Remote Sensing         
-                   metadata breakdown cards.                       All tiles are pixel-aligned at zoom 14, guaranteeing 100% spatial
-                                                                   coherence."
+                Hit Enter or click the suggestion.                  I'll select it, and the map smoothly flies straight to the Himalayan valley, 
+                Map smoothly glides to Kedarnath.                   placing our observation reticle.
 
------------------------------------------------------------------------------------------------------------------------------------
-[2:20 - 2:45]   [CAMERA ON PRESENTER + FULL UI OVERVIEW]           "Finally, SatQuery adheres to strict scientific honesty. Our
-                Presenter shows the Honesty Metric Panel and       Honesty Panel and calibrated confidence flags ensure defense and
-                system integrity breakdown.                        disaster teams always know whether observations are high confidence
-                                                                   or require ground verification.
-                Closing graphic with SatQuery logo, GitHub repo,   
-                and team credits.                                  SatQuery transforms raw, complex Earth Observation streams into
-                                                                   instant, actionable spatial intelligence for India and the world.
-                                                                   
-                                                                   Thank you!"
-===================================================================================================================================
+                Point cursor to the browser address bar:            And check out the browser address bar up here — notice how the URL just 
+                `/?lat=30.7346&lon=79.0669&loc=Kedarnath`           updated in real time. Just like Google Maps, you can copy this exact link, 
+                                                                    send it to your disaster response team, and when they open it, their 
+                                                                    workspace loads this exact spot instantly."
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+0:55 - 1:35     [SCREEN: VQA & TEMPORAL CHANGE DETECTION]           "Now, what can you actually ask it?
+(40 sec)                                                            
+                Click 'Visual Question Answering' tab.              Let’s hop into Visual Question Answering. I'll pick New Delhi along the 
+                Click preset 'New Delhi' and suggestion chip:       Yamuna river and ask: 'Detect surface water bodies and urban drainage'.
+                '+ Detect surface water bodies & channels'.
+                                                                    When I hit 'Ask SatQuery', it pulls the clearest 10-meter Sentinel-2 
+                Click 'Ask SatQuery'.                               optical scene and passes it to our vision pipeline. Look at that — not only 
+                Result loads with clear narrative + cyan bounding   do we get a detailed geographical breakdown, but it also draws bounding 
+                boxes over the river/water areas.                   boxes over detected water bodies with calibrated confidence scores.
+
+                Click 'Change Detection' tab.                       Now, what if we want to see how this area changed over time?
+                Pick Baseline: 2023-05-12 / Observation: 2024-05-12.
+                Click 'Detect Temporal Change'.                     We switch to Change Detection, pick dates from 2023 and 2024, and hit detect. 
+                                                                    Check out this interactive swipe slider — as I drag it back and forth, you 
+                Smoothly drag the Before/After slider left & right. can clearly see seasonal water boundary shifts and urban expansion between 
+                                                                    the two years. It's that intuitive."
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+1:35 - 2:20     [SCREEN: MULTIMODAL SENSOR FUSION SPOTLIGHT]        "Now for our biggest breakthrough — Multimodal Sensor Fusion.
+(45 sec)                                                            
+                Click 'Sensor Fusion' in the top bar.               What happens when heavy storm clouds completely blind regular optical cameras?
+                Select prompt:
+                '+ Detect flood extent and standing water by fusing We switch to Sensor Fusion. Here, SatQuery dynamically pairs optical imagery 
+                optical and SAR radar'.                             with Sentinel-1 C-band Synthetic Aperture Radar. 
+
+                Click 'Analyze Sensor Fusion'.                      Because radar emits microwave pulses at 5.4 gigahertz, it punches straight 
+                Radar scanner animation pulses for 1.5s, then loads through thick clouds, rain, and darkness. Smooth water reflects the signal 
+                the 4-mode Fusion Inspector.                        away and appears pitch black, while concrete structures bounce back bright.
+
+                1. Drag the 'Split Swipe' handle back & forth       Take a look at our Fusion Inspector:
+                   across the center.                               - First, this Split Swipe lets us drag between optical terrain on the left 
+                2. Click 'Opacity Blend' tab, slide to 50%,          and radar backscatter on the right.
+                   then click 'Radar Only'.                         - In Opacity Blend, we can seamlessly cross-fade between sensors.
+                3. Click 'Color Composite' tab.                     - We even have a False-Color Composite that overlays microwave backscatter 
+                4. Scroll down slightly to show technical cards.     directly onto optical reflectance.
+
+                                                                    Both layers are pixel-aligned at zoom 14, giving analysts 100% spatial 
+                                                                    consistency."
+
+-----------------------------------------------------------------------------------------------------------------------------------------
+2:20 - 2:45     [SCREEN + WEBCAM: HONESTY PANEL & CLOSING]          "Finally, because real-world decisions depend on this data, SatQuery is 
+(25 sec)                                                            built with strict scientific honesty. 
+                Scroll down to the Honesty Panel & Confidence Flag.
+                                                                    Our platform displays confidence metrics upfront and includes an Honesty Panel, 
+                Cut back to full camera on you (confident smile).   so response teams know exactly when the AI is certain and when ground 
+                                                                    verification is needed.
+
+                Show closing slide / GitHub repo link.              SatQuery turns complex satellite streams into fast, reliable spatial 
+                                                                    intelligence when seconds count. 
+
+                                                                    Thank you so much!"
+=========================================================================================================================================
 ```
 
 ---
 
-## Presenter Tips for a Winning Delivery
-- **Pacing**: Speak at an energetic, steady conversational rate (~140 words per minute).
-- **Mouse Movement**: Move the cursor deliberately. Avoid erratic circular wiggling; pause for 0.5s after clicking buttons so the viewer can follow the UI interaction.
-- **Swipe Interaction**: When demonstrating the **Split Swipe** and **Opacity Blend** sliders, drag back and forth smoothly across the center of the screen to showcase the optical-radar alignment.
-- **Key Buzzwords to Emphasize**:
-  - *"Multimodal Sensor Fusion"*
-  - *"C-Band Synthetic Aperture Radar (SAR)"*
-  - *"Pixel-Aligned WebMercator Quad Tiles"*
-  - *"Google Maps-Style Autocomplete & URL Synchronization"*
-  - *"Zero-Hallucination Confidence Metrics"*
+## 🎙️ Natural Delivery Guide: How to Sound Human (Not Scripted)
+
+1. **Talk to a Friend, Not an Audience**:
+   - Instead of reading word-for-word, imagine you are showing a cool project you just built to a developer friend sitting next to you.
+2. **Use Natural Fillers & Contractions**:
+   - Say *"Let's"*, *"Here's"*, *"Look at that"*, *"Check this out"* instead of *"Let us observe"* or *"We will now demonstrate"*.
+3. **Sync Your Hands with Your Words**:
+   - When you say *"as I drag it back and forth"*, move the slider smoothly across the screen.
+   - When you say *"check out the URL up here"*, move the mouse toward the address bar or highlight it.
+4. **Energy Peaks**:
+   - Elevate your energy at **1:35** when you introduce *Sensor Fusion* — that is the "wow" moment of your project.
+
+---
+
+## 📋 Quick Teleprompter Bullet Points (If You Prefer Speaking Freely)
+
+- **0:00 (Hook)**: Floods & disaster blind spots &rarr; optical satellites can't see through clouds &rarr; meet SatQuery.
+- **0:25 (Map & Autocomplete)**: Type `"Kedarnath"` &rarr; instant typeahead suggestion &rarr; smooth fly-to &rarr; live Google Maps-style URL syncing.
+- **0:55 (VQA & Change Detection)**: New Delhi Yamuna query &rarr; 10m Sentinel-2 optical tile + AI bounding boxes &rarr; switch to Change Detection &rarr; swipe before/after slider.
+- **1:35 (Sensor Fusion Spotlight)**: Overcoming clouds with Sentinel-1 SAR radar (5.4 GHz C-band) &rarr; show Split Swipe &rarr; Opacity Blend &rarr; False-Color Composite &rarr; pixel alignment at zoom 14.
+- **2:20 (Wrap Up)**: Honesty Metric & calibrated confidence &rarr; fast, zero-hallucination spatial intelligence for emergency response &rarr; thank the judges/viewers.
