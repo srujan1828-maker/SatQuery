@@ -255,7 +255,7 @@ class Sentinel1Scene:
 
 
 def sentinel1_tile_url(scene_id: str, location: Location, zoom: int = 14) -> str:
-    """Build a no-key Planetary Computer VV SAR radar tile URL for a Sentinel-1 scene."""
+    """Build a no-key Planetary Computer VV SAR radar tile URL for a Sentinel-1 scene with radar reflectivity colormap."""
     tiles_per_axis = 2 ** zoom
     tile_x = int((location.lon + 180) / 360 * tiles_per_axis)
     tile_y = int((1 - asinh(tan(radians(location.lat))) / pi) / 2 * tiles_per_axis)
@@ -265,6 +265,8 @@ def sentinel1_tile_url(scene_id: str, location: Location, zoom: int = 14) -> str
             "item": scene_id,
             "assets": "vv",
             "format": "png",
+            "rescale": "0,700",
+            "colormap_name": "jet",
         }
     )
     return f"{SENTINEL_TILE_URL}/{zoom}/{tile_x}/{tile_y}@2x?{parameters}"

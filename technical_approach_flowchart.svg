@@ -1,0 +1,332 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 755" width="100%" height="100%">
+  <defs>
+    <!-- Drop Shadow Filter -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="114%" filterUnits="userSpaceOnUse">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3.5"/>
+      <feOffset dx="0" dy="2.5"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.09"/></feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Gemini Gradient -->
+    <linearGradient id="geminiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A73E8"/>
+      <stop offset="50%" stop-color="#8E24AA"/>
+      <stop offset="100%" stop-color="#EA4335"/>
+    </linearGradient>
+
+    <!-- Marker Arrows -->
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0055A5"/>
+    </marker>
+    <marker id="arrowVqa" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0284c7"/>
+    </marker>
+    <marker id="arrowCd" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#d97706"/>
+    </marker>
+    <marker id="arrowFusion" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#7c3aed"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#059669"/>
+    </marker>
+
+    <!-- ================= COMPACT STANDALONE LOGO DEFINITIONS (14x14px) ================= -->
+
+    <!-- React -->
+    <g id="logo-react" transform="scale(0.7)">
+      <ellipse cx="10" cy="10" rx="9.5" ry="3.6" fill="none" stroke="#00b4d8" stroke-width="1.5"/>
+      <ellipse cx="10" cy="10" rx="9.5" ry="3.6" fill="none" stroke="#00b4d8" stroke-width="1.5" transform="rotate(60 10 10)"/>
+      <ellipse cx="10" cy="10" rx="9.5" ry="3.6" fill="none" stroke="#00b4d8" stroke-width="1.5" transform="rotate(120 10 10)"/>
+      <circle cx="10" cy="10" r="1.8" fill="#00b4d8"/>
+    </g>
+
+    <!-- Vite -->
+    <g id="logo-vite" transform="scale(0.7)">
+      <path d="M17 3L10 18L3 3h4.5l2.5 6l2.5-6z" fill="#41D1FF"/>
+      <path d="M10 18L16.5 4l-4 0.5l-2.5 5.5l-1.5-3l-5.5-3.5z" fill="#BD34FE" opacity="0.9"/>
+      <path d="M9 1.5L4 10.5h4l-1.5 6.5l7.5-9.5h-4l2.5-5.5z" fill="#FFDF00"/>
+    </g>
+
+    <!-- Leaflet -->
+    <g id="logo-leaflet" transform="scale(0.7)">
+      <path d="M4 18c0 0 1-7.5 6.5-11s8.5-4 8.5-4s-1 7.5-6.5 11s-8.5 4-8.5 4z" fill="#199900"/>
+      <path d="M6 16c2.5-4 5.5-6.5 11-8" stroke="#ffffff" stroke-width="1.2" fill="none"/>
+    </g>
+
+    <!-- Vercel -->
+    <g id="logo-vercel" transform="scale(0.7)">
+      <polygon points="10,2 18.5,17.5 1.5,17.5" fill="#0f172a"/>
+    </g>
+
+    <!-- FastAPI -->
+    <g id="logo-fastapi" transform="scale(0.7)">
+      <circle cx="10" cy="10" r="9" fill="#009688"/>
+      <path d="M11 2.5L5 11h4l-1 6.5l6-8h-4l1-7z" fill="#ffffff"/>
+    </g>
+
+    <!-- Python -->
+    <g id="logo-python" transform="scale(0.7)">
+      <path d="M9.8 2.5c-3.5 0-3.2 1.5-3.2 1.5l.03 1.6h3.2v.5H5.2S3 5.8 3 9.3s2 3.4 2 3.4h1.1v-1.6c0-1.9 1.6-1.9 1.6-1.9h3.2c1.6 0 1.6-1.5 1.6-1.5V4.2c0-1.7-2.7-1.7-2.7-1.7zm-.9 1c.3 0 .6.2.6.6s-.3.6-.6.6-.6-.2-.6-.6.3-.6.6-.6z" fill="#387EB8"/>
+      <path d="M10.2 17.5c3.5 0 3.2-1.5 3.2-1.5l-.03-1.6h-3.2v-.5h4.6s2.2.3 2.2-3.2-2-3.4-2-3.4h-1.1v1.6c0 1.9-1.6 1.9-1.6 1.9h-3.2c-1.6 0-1.6 1.5-1.6 1.5v3.5c0 1.7 2.7 1.7 2.7 1.7zm.9-1c-.3 0-.6-.2-.6-.6s.3-.6.6-.6.6.2.6.6-.3.6-.6.6z" fill="#FFC331"/>
+    </g>
+
+    <!-- Pydantic -->
+    <g id="logo-pydantic" transform="scale(0.7)">
+      <rect x="2" y="2" width="16" height="16" rx="3.5" fill="#E92063"/>
+      <text x="10" y="14" font-family="'Segoe UI', sans-serif" font-weight="900" font-size="12" fill="#ffffff" text-anchor="middle">p</text>
+    </g>
+
+    <!-- Docker -->
+    <g id="logo-docker" transform="scale(0.7)">
+      <rect x="2" y="7.5" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <rect x="5.5" y="7.5" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <rect x="9" y="7.5" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <rect x="5.5" y="4.2" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <rect x="9" y="4.2" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <rect x="12.5" y="7.5" width="2.5" height="2.5" fill="#2496ED" rx="0.4"/>
+      <path d="M18.5 9c-.4-.3-1.2-.4-1.8-.2c-.2-.6-.8-1-1.4-1.2v.5c0 1.6-1.6 2.8-4 2.8H2c0 3.2 2.4 5.2 6.4 5.2s7.2-2 8.8-5.2c.6 0 1.4-.5 1.6-1.2c-.3-.3-.6-.6-.8-.7z" fill="#2496ED"/>
+    </g>
+
+    <!-- Render -->
+    <g id="logo-render" transform="scale(0.7)">
+      <rect x="2" y="2" width="16" height="16" rx="3.5" fill="#111827"/>
+      <path d="M5.5 5.5h4.2a2.3 2.3 0 0 1 2.3 2.3c0 1-.6 1.9-1.5 2.2L12.5 14h-2L8.8 10.5H7.2V14H5.5V5.5zm1.7 3.3h2.5a.8.8 0 0 0 .8-.8c0-.5-.4-.8-.8-.8H7.2v1.6z" fill="#46E3B7"/>
+    </g>
+
+    <!-- Microsoft Planetary Computer -->
+    <g id="logo-ms" transform="scale(0.7)">
+      <rect x="2" y="2" width="7" height="7" fill="#F25022"/>
+      <rect x="10.5" y="2" width="7" height="7" fill="#7FBA00"/>
+      <rect x="2" y="10.5" width="7" height="7" fill="#00A4EF"/>
+      <rect x="10.5" y="10.5" width="7" height="7" fill="#FFB900"/>
+    </g>
+
+    <!-- Satellite Sentinel-2 -->
+    <g id="logo-sat-optical" transform="scale(0.7)">
+      <rect x="1" y="7" width="5" height="5" fill="#0284c7" stroke="#ffffff" stroke-width="0.6" rx="0.8"/>
+      <rect x="13" y="7" width="5" height="5" fill="#0284c7" stroke="#ffffff" stroke-width="0.6" rx="0.8"/>
+      <rect x="7" y="6" width="5" height="7" fill="#F8FAFC" stroke="#0369a1" stroke-width="0.8" rx="0.8"/>
+      <circle cx="9.5" cy="9.5" r="1.2" fill="#0284c7"/>
+      <path d="M7 4c1.5-1.5 3.5-1.5 5 0" stroke="#0369a1" stroke-width="0.9" fill="none"/>
+    </g>
+
+    <!-- Satellite Sentinel-1 SAR -->
+    <g id="logo-sat-radar" transform="scale(0.7)">
+      <rect x="1" y="7" width="5" height="5" fill="#059669" stroke="#ffffff" stroke-width="0.6" rx="0.8"/>
+      <rect x="13" y="7" width="5" height="5" fill="#059669" stroke="#ffffff" stroke-width="0.6" rx="0.8"/>
+      <rect x="7" y="6" width="5" height="7" fill="#F8FAFC" stroke="#047857" stroke-width="0.8" rx="0.8"/>
+      <path d="M8 11c1 1 2 1 3 0" stroke="#059669" stroke-width="1.1" fill="none"/>
+      <path d="M7 13c2 1.8 4 1.8 5 0" stroke="#059669" stroke-width="1.1" fill="none"/>
+    </g>
+
+    <!-- Google Gemini Sparkle -->
+    <g id="logo-gemini" transform="scale(0.7)">
+      <path d="M10 1C10 5.8 5.8 10 1 10C5.8 10 10 14.2 10 19C10 14.2 14.2 10 19 10C14.2 10 10 5.8 10 1Z" fill="url(#geminiGrad)"/>
+    </g>
+
+    <!-- GeoChat Neural -->
+    <g id="logo-geochat" transform="scale(0.7)">
+      <rect x="2" y="2" width="16" height="16" rx="3.5" fill="#7C3AED"/>
+      <circle cx="6" cy="6" r="1.6" fill="#ffffff"/>
+      <circle cx="14" cy="6" r="1.6" fill="#ffffff"/>
+      <circle cx="10" cy="14" r="1.6" fill="#ffffff"/>
+      <line x1="6" y1="6" x2="10" y2="14" stroke="#ffffff" stroke-width="1.1"/>
+      <line x1="14" y1="6" x2="10" y2="14" stroke="#ffffff" stroke-width="1.1"/>
+      <line x1="6" y1="6" x2="14" y2="6" stroke="#ffffff" stroke-width="1.1"/>
+    </g>
+
+  </defs>
+
+  <style>
+    .title-text { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 13px; }
+    .sub-title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 11.5px; }
+    .sub-text { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 10.8px; fill: #334155; }
+    .tech-tag { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 10px; font-weight: 700; }
+  </style>
+
+  <!-- ================= 1. GEOSPATIAL TARGETING & CONTRACT B ================= -->
+  <g transform="translate(130, 10)" filter="url(#cardShadow)">
+    <rect width="620" height="92" rx="10" fill="#f0f9ff" stroke="#0055A5" stroke-width="1.8"/>
+    <rect x="0" y="0" width="620" height="26" rx="10" fill="#0055A5"/>
+    <rect x="0" y="16" width="620" height="10" fill="#0055A5"/>
+    <text x="310" y="18" text-anchor="middle" fill="#ffffff" class="title-text" letter-spacing="0.5">1. GEOSPATIAL TARGETING &amp; CONTRACT B DISPATCH</text>
+    
+    <!-- Subtitle on Left -->
+    <text x="20" y="47" class="sub-title" fill="#0055A5">Client Interface • Leaflet 1.9 (EPSG:4326 WGS84)</text>
+
+    <!-- Standalone Small Logos on Right (No white boxes) -->
+    <g transform="translate(485, 36)">
+      <use href="#logo-react" x="0" y="0"/>
+      <use href="#logo-vite" x="26" y="0"/>
+      <use href="#logo-leaflet" x="52" y="0"/>
+      <use href="#logo-vercel" x="78" y="0"/>
+    </g>
+
+    <text x="20" y="66" class="sub-text">• Bounding Box calculation (Δlat=0.012°, geodetic scale) • OSM Nominatim geocoding</text>
+    <text x="20" y="82" class="sub-text">• Encapsulates QueryRequest {prompt, location, date, mode} into Contract B JSON</text>
+  </g>
+
+  <!-- Arrow 1 -> 2 -->
+  <path d="M 440 102 L 440 124" fill="none" stroke="#0055A5" stroke-width="2.2" marker-end="url(#arrowBlue)"/>
+
+  <!-- ================= 2. FASTAPI ASYNC GATEWAY ================= -->
+  <g transform="translate(130, 126)" filter="url(#cardShadow)">
+    <rect width="620" height="92" rx="10" fill="#f8fafc" stroke="#334155" stroke-width="1.8"/>
+    <rect x="0" y="0" width="620" height="26" rx="10" fill="#1e293b"/>
+    <rect x="0" y="16" width="620" height="10" fill="#1e293b"/>
+    <text x="310" y="18" text-anchor="middle" fill="#ffffff" class="title-text" letter-spacing="0.5">2. ASYNCHRONOUS API GATEWAY &amp; VALIDATION LAYER</text>
+    
+    <!-- Subtitle on Left -->
+    <text x="20" y="47" class="sub-title" fill="#1e293b">FastAPI Async Controller • Pydantic v2 • Render</text>
+
+    <!-- Standalone Small Logos on Right (No white boxes) -->
+    <g transform="translate(460, 36)">
+      <use href="#logo-fastapi" x="0" y="0"/>
+      <use href="#logo-python" x="26" y="0"/>
+      <use href="#logo-pydantic" x="52" y="0"/>
+      <use href="#logo-docker" x="78" y="0"/>
+      <use href="#logo-render" x="104" y="0"/>
+    </g>
+
+    <text x="20" y="66" class="sub-text">• Contract B REST Gateway (POST /api/query) + Pydantic v2 strict schema enforcement</text>
+    <text x="20" y="82" class="sub-text">• Non-blocking Concurrency via AnyIO / HTTPX • Tile Reverse Proxy (/media/sentinel.png)</text>
+  </g>
+
+  <!-- Arrow 2 -> 3 (Split into Data & AI) -->
+  <path d="M 440 218 L 440 240" fill="none" stroke="#475569" stroke-width="2.2"/>
+  <path d="M 230 240 L 650 240" fill="none" stroke="#475569" stroke-width="2.2"/>
+  <path d="M 230 240 L 230 260" fill="none" stroke="#475569" stroke-width="2.2" marker-end="url(#arrowGray)"/>
+  <path d="M 650 240 L 650 260" fill="none" stroke="#475569" stroke-width="2.2" marker-end="url(#arrowGray)"/>
+
+  <!-- ================= 3A. STAC COG INGESTION (LEFT) ================= -->
+  <g transform="translate(25, 262)" filter="url(#cardShadow)">
+    <rect width="405" height="158" rx="10" fill="#f0fdf4" stroke="#059669" stroke-width="1.8"/>
+    <rect x="0" y="0" width="405" height="26" rx="10" fill="#059669"/>
+    <rect x="0" y="16" width="405" height="10" fill="#059669"/>
+    <text x="202" y="18" text-anchor="middle" fill="#ffffff" class="title-text">3A. DYNAMIC STAC COG INGESTION ENGINE</text>
+    
+    <!-- Subtitle on Left -->
+    <text x="15" y="47" class="sub-title" fill="#065f46">Planetary Computer • Sentinel-1/2</text>
+
+    <!-- Standalone Small Logos on Right (No white boxes) -->
+    <g transform="translate(305, 36)">
+      <use href="#logo-ms" x="0" y="0"/>
+      <use href="#logo-sat-optical" x="26" y="0"/>
+      <use href="#logo-sat-radar" x="52" y="0"/>
+    </g>
+
+    <text x="15" y="69" class="sub-text">• <b>STAC v1.0.0 Search</b>: Automated cloud cover &amp; spatial filtering</text>
+    <text x="15" y="86" class="sub-text">• <b>Sentinel-2 L2A (10m)</b>: Bottom-of-Atmosphere (BOA) Surface RGB</text>
+    <text x="15" y="103" class="sub-text">• <b>Sentinel-1 GRD (10m)</b>: C-band SAR (5.405 GHz, VV/VH Backscatter)</text>
+    <text x="15" y="120" class="sub-text">• <b>WebMercatorQuad (EPSG:3857)</b> Tile Matrix Dynamic Slicing</text>
+    <text x="15" y="137" class="sub-text">• Cloud-Optimized GeoTIFF (COG) byte-range streaming via TiTiler</text>
+  </g>
+
+  <!-- Cross Arrow 3A -> 3B (Pixel Aligned Rasters) -->
+  <path d="M 430 341 L 450 341" fill="none" stroke="#059669" stroke-width="2" stroke-dasharray="3" marker-end="url(#arrowGreen)"/>
+
+  <!-- ================= 3B. MULTIMODAL VLM INFERENCE (RIGHT) ================= -->
+  <g transform="translate(450, 262)" filter="url(#cardShadow)">
+    <rect width="405" height="158" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.8"/>
+    <rect x="0" y="0" width="405" height="26" rx="10" fill="#7c3aed"/>
+    <rect x="0" y="16" width="405" height="10" fill="#7c3aed"/>
+    <text x="202" y="18" text-anchor="middle" fill="#ffffff" class="title-text">3B. MULTIMODAL VISION-LANGUAGE AI</text>
+    
+    <!-- Subtitle on Left -->
+    <text x="15" y="47" class="sub-title" fill="#581c87">GeoChat-7B • Google Gemini Vision</text>
+
+    <!-- Standalone Small Logos on Right (No white boxes) -->
+    <g transform="translate(325, 36)">
+      <use href="#logo-geochat" x="0" y="0"/>
+      <use href="#logo-gemini" x="26" y="0"/>
+    </g>
+
+    <text x="15" y="69" class="sub-text">• <b>Contract A /infer</b>: Base64 Raster Context + Prompt Tokenization</text>
+    <text x="15" y="86" class="sub-text">• <b>Vision Transformer</b>: CLIP ViT-L/14 Backbone + Multimodal Projection</text>
+    <text x="15" y="103" class="sub-text">• <b>Gemini 1.5 Flash</b>: Instant Cloud Multimodal Remote Sensing Reasoning</text>
+    <text x="15" y="120" class="sub-text">• <b>Spatial BBox Grounding</b>: Normalized [ymin, xmin, ymax, xmax]</text>
+    <text x="15" y="137" class="sub-text">• <b>Deterministic Heuristic Engine</b>: Zero-Crash Fallback &amp; Confidence</text>
+  </g>
+
+  <!-- Arrows from 3A/3B to Modes -->
+  <path d="M 230 420 L 230 445" fill="none" stroke="#475569" stroke-width="2"/>
+  <path d="M 650 420 L 650 445" fill="none" stroke="#475569" stroke-width="2"/>
+  <path d="M 158 445 L 722 445" fill="none" stroke="#475569" stroke-width="2"/>
+
+  <path d="M 158 445 L 158 468" fill="none" stroke="#0284c7" stroke-width="2.2" marker-end="url(#arrowVqa)"/>
+  <path d="M 440 445 L 440 468" fill="none" stroke="#d97706" stroke-width="2.2" marker-end="url(#arrowCd)"/>
+  <path d="M 722 445 L 722 468" fill="none" stroke="#7c3aed" stroke-width="2.2" marker-end="url(#arrowFusion)"/>
+
+  <!-- ================= 4. THREE OPERATIONAL MODES SYNTHESIS ================= -->
+  
+  <!-- Mode 1: VQA (Sky Blue) -->
+  <g transform="translate(25, 472)" filter="url(#cardShadow)">
+    <rect width="265" height="175" rx="10" fill="#f0f9ff" stroke="#0284c7" stroke-width="2"/>
+    <rect x="0" y="0" width="265" height="28" rx="10" fill="#0284c7"/>
+    <rect x="0" y="16" width="265" height="12" fill="#0284c7"/>
+    <text x="132" y="19" text-anchor="middle" fill="#ffffff" class="title-text" font-size="12.5px">VQA PIPELINE</text>
+    
+    <text x="14" y="46" class="sub-title" fill="#0369a1">Visual Question Answering</text>
+    <text x="14" y="65" class="sub-text">• Single Sentinel-2 MSI RGB raster</text>
+    <text x="14" y="83" class="sub-text">• Pixel-to-BBox Vector Mapping</text>
+    <text x="14" y="101" class="sub-text">• SVG Overlays &amp; Confidence Tooltip</text>
+    <text x="14" y="119" class="sub-text">• Terrain &amp; Infrastructure Analysis</text>
+    <text x="14" y="137" class="sub-text">• Bilingual Hindi/English Synthesis</text>
+    
+    <rect x="14" y="148" width="237" height="16" rx="3" fill="#e0f2fe"/>
+    <text x="132" y="160" text-anchor="middle" fill="#0284c7" font-family="'Segoe UI', sans-serif" font-size="9.5px" font-weight="600">UI: ImageViewer.jsx</text>
+  </g>
+
+  <!-- Mode 2: Change Detection (Amber / Orange) -->
+  <g transform="translate(308, 472)" filter="url(#cardShadow)">
+    <rect width="265" height="175" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <rect x="0" y="0" width="265" height="28" rx="10" fill="#d97706"/>
+    <rect x="0" y="16" width="265" height="12" fill="#d97706"/>
+    <text x="132" y="19" text-anchor="middle" fill="#ffffff" class="title-text" font-size="12.5px">CHANGE DETECTION PIPELINE</text>
+    
+    <text x="14" y="46" class="sub-title" fill="#b45309">Temporal Comparison (T0 vs T1)</text>
+    <text x="14" y="65" class="sub-text">• Bi-temporal Optical Co-registration</text>
+    <text x="14" y="83" class="sub-text">• Surface Reflectance Difference Delta</text>
+    <text x="14" y="101" class="sub-text">• GPU CSS clip-path Swipe Partition</text>
+    <text x="14" y="119" class="sub-text">• Urban Sprawl &amp; Cropland Shift</text>
+    <text x="14" y="137" class="sub-text">• Quantitative Delta Summary Panel</text>
+    
+    <rect x="14" y="148" width="237" height="16" rx="3" fill="#fef3c7"/>
+    <text x="132" y="160" text-anchor="middle" fill="#d97706" font-family="'Segoe UI', sans-serif" font-size="9.5px" font-weight="600">UI: ComparisonSlider.jsx</text>
+  </g>
+
+  <!-- Mode 3: Sensor Fusion (Purple) -->
+  <g transform="translate(590, 472)" filter="url(#cardShadow)">
+    <rect width="265" height="175" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+    <rect x="0" y="0" width="265" height="28" rx="10" fill="#7c3aed"/>
+    <rect x="0" y="16" width="265" height="12" fill="#7c3aed"/>
+    <text x="132" y="19" text-anchor="middle" fill="#ffffff" class="title-text" font-size="12.5px">SENSOR FUSION PIPELINE</text>
+    
+    <text x="14" y="46" class="sub-title" fill="#6d28d9">Optical + Microwave SAR Synergy</text>
+    <text x="14" y="65" class="sub-text">• Sentinel-2 + Sentinel-1 Aligned Tiles</text>
+    <text x="14" y="83" class="sub-text">• C-band Microwave Cloud Penetration</text>
+    <text x="14" y="101" class="sub-text">• Specular Backscatter Water Attenuation</text>
+    <text x="14" y="119" class="sub-text">• Dynamic Opacity Cross-Fade Blend</text>
+    <text x="14" y="137" class="sub-text">• Dual-Bounce Urban Infrastructure</text>
+    
+    <rect x="14" y="148" width="237" height="16" rx="3" fill="#f3e8ff"/>
+    <text x="132" y="160" text-anchor="middle" fill="#7c3aed" font-family="'Segoe UI', sans-serif" font-size="9.5px" font-weight="600">UI: FusionInspector.jsx</text>
+  </g>
+
+  <!-- Direct pointer arrows feeding the 3 buttons below on the slide -->
+  <path d="M 158 647 L 158 680" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-dasharray="3" marker-end="url(#arrowVqa)"/>
+  <path d="M 440 647 L 440 680" fill="none" stroke="#d97706" stroke-width="2.2" stroke-dasharray="3" marker-end="url(#arrowCd)"/>
+  <path d="M 722 647 L 722 680" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-dasharray="3" marker-end="url(#arrowFusion)"/>
+
+  <text x="440" y="704" text-anchor="middle" class="sub-text" font-weight="700" fill="#0055A5" font-size="12.5px" letter-spacing="0.5">
+    ▼ Directly Feeds the Slide's Three Operational Modes (VQA • CHANGE DETECTION • SENSOR FUSION) ▼
+  </text>
+</svg>

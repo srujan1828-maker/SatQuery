@@ -75,6 +75,33 @@ async def sentinel_media(source: str) -> Response:
 async def media(image_id: str) -> Response:
     """Self-contained demo imagery so Contract C can render without external media hosting."""
     safe_id = escape(image_id)
+    if "radar" in safe_id.lower():
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Sentinel-1 SAR Radar {safe_id}">
+<defs>
+  <radialGradient id="radarReflectivity" cx="45%" cy="50%" r="60%">
+    <stop offset="0%" stop-color="#990000"/>
+    <stop offset="20%" stop-color="#e62e00"/>
+    <stop offset="40%" stop-color="#ff9900"/>
+    <stop offset="60%" stop-color="#ffd11a"/>
+    <stop offset="75%" stop-color="#2eb82e"/>
+    <stop offset="90%" stop-color="#0066ff"/>
+    <stop offset="100%" stop-color="#0a192f"/>
+  </radialGradient>
+  <linearGradient id="radarBg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050b14"/><stop offset="1" stop-color="#0a1626"/></linearGradient>
+</defs>
+<rect width="960" height="600" fill="url(#radarBg)"/>
+<circle cx="480" cy="300" r="270" fill="url(#radarReflectivity)" opacity="0.88"/>
+<circle cx="480" cy="300" r="70" fill="none" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+<circle cx="480" cy="300" r="140" fill="none" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+<circle cx="480" cy="300" r="210" fill="none" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6"/>
+<circle cx="480" cy="300" r="270" fill="none" stroke="#64ffda" stroke-width="2" opacity="0.8"/>
+<line x1="160" y1="300" x2="800" y2="300" stroke="#64ffda" stroke-width="1" opacity="0.4"/>
+<line x1="480" y1="20" x2="480" y2="580" stroke="#64ffda" stroke-width="1" opacity="0.4"/>
+<text x="38" y="55" fill="#64ffda" font-family="system-ui, monospace" font-size="22" font-weight="700">SENTINEL-1 C-BAND SAR RADAR REFLECTIVITY</text>
+<text x="38" y="85" fill="#a0aec0" font-family="system-ui" font-size="15">VV Co-Polarization • False-Color Radar Reflectivity (Jet/Doppler Spectrum)</text>
+</svg>'''
+        return Response(svg, media_type="image/svg+xml")
+
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" role="img" aria-label="Satellite demo image {safe_id}">
 <defs><linearGradient id="land" x2="1" y2="1"><stop stop-color="#264c3f"/><stop offset="1" stop-color="#8a9d5d"/></linearGradient></defs>
 <rect width="960" height="600" fill="url(#land)"/><path d="M0 390 C190 290 290 490 440 365 S730 265 960 410 L960 600 L0 600Z" fill="#1f6071" opacity=".88"/>
