@@ -9,10 +9,12 @@ export default defineConfig({
         ...["Workers", "Assets", "Widgets", "ThirdParty"].map((name) => ({
           src: `node_modules/cesium/Build/Cesium/${name}`,
           dest: "cesium",
+          rename: { stripBase: 4 },
         })),
         {
           src: "node_modules/@mediapipe/tasks-vision/wasm/*",
           dest: "mediapipe",
+          rename: { stripBase: true },
         },
       ],
     }),

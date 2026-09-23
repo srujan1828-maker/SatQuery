@@ -20,3 +20,5 @@ jobs:
         working-directory: frontend
       - run: npm run lint && npm test && npm run build
         working-directory: frontend
+      - name: Build backend runtime image (includes native import smoke test)
+        run: docker build -t satquery-backend:ci backend
