@@ -13,7 +13,7 @@ React/Vite + FastAPI + Planetary Computer COG reads + CesiumJS. Select an area, 
 - GeoChat for single-image questions; Gemini for supported single/paired inputs. Model answers are uncalibrated, and no detection boxes are invented.
 - Isolated cancellable jobs, deadlines, concurrency/IP budgets and restart-safe job records. Browser-saved runs and Markdown/JSON/GeoJSON exports.
 - Optional lazy-loaded Cesium globe with AOI, acquisition selection, imagery opacity and change polygons. Terrain is optional and requires an ion token.
-- Opt-in MediaPipe worker-based gesture experiment: one pinch rotates, two pinches zoom, release stops, Escape disables. Video remains local. Model assets load from Google's versioned URL unless self-hosted.
+- Opt-in low-power MediaPipe browser gesture experiment (CPU, downscaled frames, capped tracking rate): one pinch rotates, two pinches zoom, release stops, Escape disables. Video remains local. Model assets load from Google's versioned URL unless self-hosted.
 
 ## Run locally
 
