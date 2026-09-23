@@ -59,3 +59,12 @@ See [deployment](docs/DEPLOYMENT.md), [validation](docs/VALIDATION.md) and [rema
 Current limits: one API worker on one host; no account/RBAC system; job IDs are unguessable bearer capabilities; saved runs are browser-local; no arbitrary polygon AOI; no purchased high-resolution imagery; no calibrated optical/SAR fusion. Do not use for sensitive AOIs or emergency decisions without completing the corresponding security and scientific validation work.
 
 Evidence artifacts expire after seven days or under the 1 GiB cache cap. Export original PNGs and reports for archival use. Navigation basemaps have different acquisition/resolution characteristics and are not analysis evidence.
+
+## Four feature pages
+
+- `/ask`: questions about an observation.
+- `/water-change`: before/after water screening.
+- `/optical-radar`: optical and radar evidence comparison.
+- `/crop-outlook`: experimental district crop model evaluation from uploaded measured records, with chronological holdouts and conditional yield/production estimates.
+
+Crop Outlook requires actual historical yields and calibrated radar/optical/weather features. It includes no preloaded crop model or automatic crop-data ingestion. See [crop data requirements and evaluation](docs/CROP_OUTLOOK.md).

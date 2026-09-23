@@ -82,13 +82,13 @@ it("preserves zero coordinates", () => {
   render(<App />);
   expect(screen.getByTestId("coords").textContent).toBe("0,0");
 });
-it("ignores an old response after changing task", async () => {
+it("ignores an old response after editing the question", async () => {
   let resolve;
   api.submitQuery.mockImplementation(() => new Promise((r) => (resolve = r)));
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Retrieve and analyze" }));
-  fireEvent.change(screen.getByLabelText("Task"), {
-    target: { value: "fusion" },
+  fireEvent.change(screen.getByLabelText("Question"), {
+    target: { value: "A different question" },
   });
   await act(async () =>
     resolve({

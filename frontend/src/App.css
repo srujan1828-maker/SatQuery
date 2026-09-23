@@ -347,3 +347,18 @@ footer {
 .gesture-modes { display: flex; gap: 8px; width: 100%; }
 .gesture-modes button { flex: 1; }
 .gesture-modes button[aria-pressed="true"] { background: #84e5cf; color: #08151e; border-color: #84e5cf; }
+.feature-nav { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 4%; border-bottom: 1px solid #36556a; background: #0d1926; }
+.feature-nav a { padding: 10px 16px; color: #bed1df; border-radius: 8px; text-decoration: none; }
+.feature-nav a[aria-current="page"] { background: #84e5cf; color: #08151e; font-weight: 700; }
+.feature-nav .brand { margin-right: auto; font-weight: 800; letter-spacing: 2px; }
+.crop-page .card { margin-bottom: 24px; padding: 24px; }
+.crop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.crop-form { display: grid; gap: 18px; }
+.crop-confirm { display: flex; align-items: center; gap: 12px; }
+.crop-confirm input { width: auto; }
+.crop-page pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 16px; background: #08151e; }
+.crop-yield { font-size: 40px; color: #84e5cf; }
+.crop-yield small { font-size: 18px; }
+.table-scroll { overflow-x: auto; }
+.crop-page table { width: 100%; border-collapse: collapse; }
+.crop-page th, .crop-page td { padding: 12px; border-bottom: 1px solid #36556a; text-align: left; }
