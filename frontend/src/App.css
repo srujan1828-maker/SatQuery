@@ -343,3 +343,7 @@ footer {
 .gesture-guide > div { padding: 12px; border: 1px solid #36556a; border-radius: 10px; background: #0d1926; }
 .gesture-guide strong { display: block; color: #84e5cf; margin-bottom: 6px; }
 .gesture-guide span { font-size: 13px; line-height: 1.5; }
+
+.gesture-modes { display: flex; gap: 8px; width: 100%; }
+.gesture-modes button { flex: 1; }
+.gesture-modes button[aria-pressed="true"] { background: #84e5cf; color: #08151e; border-color: #84e5cf; }

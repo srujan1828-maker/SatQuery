@@ -328,3 +328,23 @@ def test_timeout_terminates_worker(monkeypatch):
 
     asyncio.run(exercise())
     assert process.killed
+
+
+def test_frontend_origins_and_jobs_preflight():
+    from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+    origins = main.frontend_origins(" https://sat-query-six.vercel.app/path?lat=3,https://sat-query-six.vercel.app:443/ ")
+    assert origins == ["https://sat-query-six.vercel.app"]
+    app = FastAPI()
+    app.add_middleware(CORSMiddleware, allow_origins=origins,
+                       allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type"])
+    with TestClient(app) as client:
+        for method in ["POST", "DELETE"]:
+            response = client.options("/api/jobs", headers={
+                "Origin": origins[0], "Access-Control-Request-Method": method,
+                "Access-Control-Request-Headers": "content-type"})
+            assert response.status_code == 200
+            assert response.headers["access-control-allow-origin"] == origins[0]
+        assert client.options("/api/jobs", headers={"Origin": "https://untrusted.example", "Access-Control-Request-Method": "POST"}).status_code == 400
+    with pytest.raises(ValueError):
+        main.frontend_origins("https://*.vercel.app")

@@ -10,6 +10,7 @@ import sqlite3
 import sys
 import time
 import uuid
+from urllib.parse import urlsplit
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -53,13 +54,27 @@ async def lifespan(app):
 
 
 app = FastAPI(title="SatQuery Evidence API", version="0.2.0", lifespan=lifespan)
-origins = [
-    x.strip().rstrip("/")
-    for x in os.getenv(
-        "FRONTEND_URL", "http://localhost:5173,http://127.0.0.1:5173"
-    ).split(",")
-    if x.strip()
-]
+def frontend_origins(value):
+    origins = []
+    for entry in value.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        url = urlsplit(entry)
+        if url.scheme not in {"http", "https"} or not url.hostname or url.username or url.password or "*" in entry:
+            raise ValueError("FRONTEND_URL must contain comma-separated HTTP(S) URLs, not wildcards")
+        # Browsers send only scheme + host + port, never paths or query strings.
+        port = url.port
+        host = f"[{url.hostname}]" if ":" in url.hostname else url.hostname
+        suffix = f":{port}" if port and (url.scheme, port) not in {("https", 443), ("http", 80)} else ""
+        origins.append(f"{url.scheme}://{host}{suffix}")
+    return list(dict.fromkeys(origins))
+
+
+origins = frontend_origins(os.getenv(
+    "FRONTEND_URL",
+    "https://sat-query-six.vercel.app,http://localhost:5173,http://127.0.0.1:5173",
+))
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

@@ -36,3 +36,7 @@ Deploy to a staging backend and preview frontend first. Verify source reads, pai
 Build the backend using `backend/Dockerfile`. It installs `libexpat1` and CA certificates before Python packages, then imports Rasterio, PyProj, and the API during the build. If Render reports `libexpat.so.1` missing, deploy the updated Dockerfile; installing another Python package does not supply this OS library.
 
 The frontend build verifies Cesium textures/workers and MediaPipe WASM at their public paths. The static-copy plugin preserves source directories by default, so the config explicitly strips the dependency path prefix. Do not remove these rename settings: missing texture URLs can return the SPA HTML and cause image decode failures.
+
+## OPTIONS /api/jobs returns 400
+
+Set Render's `FRONTEND_URL` to `https://sat-query-six.vercel.app` (or the exact frontend origin shown in your browser). For multiple deployments, provide a comma-separated list of their exact origins. Existing environment values override code defaults: a value containing only localhost must be updated in Render. Redeploy the backend after changing it. Preview deployment hostnames must be added explicitly; all Vercel sites are not trusted. Paths, queries and trailing slashes in configured URLs are normalized to browser origins. CORS permits POST/DELETE and Content-Type preflights; the request's Origin, requested method and requested headers determine whether it is accepted.

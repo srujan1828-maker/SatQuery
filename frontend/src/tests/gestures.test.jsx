@@ -20,7 +20,7 @@ function setup() {
 it("starts browser CPU tracking and closes model/camera on Escape", async () => {
   const stop = setup();
   render(<GestureControl onIntent={() => {}} />);
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: /Enable gesture|Stop camera/ }));
   await screen.findByText(/Ready — open hand/);
   expect(create.mock.calls[0][1]).toMatchObject({ baseOptions: { delegate: "CPU" }, numHands: 2 });
   fireEvent.keyDown(window, { key: "Escape" });
@@ -33,9 +33,9 @@ it("releases a model that finishes loading after the user stops", async () => {
   let resolve;
   create.mockImplementation(() => new Promise(r => { resolve = r; }));
   render(<GestureControl onIntent={() => {}} />);
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: /Enable gesture|Stop camera/ }));
   await waitFor(() => expect(create).toHaveBeenCalled());
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: /Enable gesture|Stop camera/ }));
   resolve({ close, detectForVideo: detect });
   await waitFor(() => expect(close).toHaveBeenCalledOnce());
   expect(detect).not.toHaveBeenCalled();
@@ -43,7 +43,7 @@ it("releases a model that finishes loading after the user stops", async () => {
 it("explains insecure camera contexts without starting a model", () => {
   vi.stubGlobal("isSecureContext", false);
   render(<GestureControl onIntent={() => {}} />);
-  fireEvent.click(screen.getByRole("button"));
+  fireEvent.click(screen.getByRole("button", { name: /Enable gesture|Stop camera/ }));
   expect(screen.getByRole("status").textContent).toContain("HTTPS");
   expect(create).not.toHaveBeenCalled();
 });

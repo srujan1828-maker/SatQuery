@@ -106,7 +106,7 @@ it("releases navigation immediately on hand loss and bounds jumps", () => {
   });
   const hand = Array.from({ length: 21 }, () => ({ x: 0.8, y: 0.8 }));
   hand[9] = { x: 0.8, y: 0.6 };
-  const intent = gestureIntent([hand], { mode: "orbit", x: 0.1, y: 0.1 });
+  const intent = gestureIntent([hand], { mode: "orbit", x: 0.1, y: 0.1 }, { mode: "orbit" });
   expect(intent.dx).toBe(0.03);
   expect(intent.dy).toBe(0.03);
 });
