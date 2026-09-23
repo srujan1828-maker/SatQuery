@@ -30,3 +30,9 @@ AOI observation reads are cached for 24 hours by pipeline version, coordinates, 
 ## Rollout
 
 Deploy to a staging backend and preview frontend first. Verify source reads, paired inputs, image quality, model configuration, cancellation and browser controls before promoting. The PR is intentionally not a production deployment. Existing clients must migrate to the jobs API.
+
+## Deployment asset and native-library checks
+
+Build the backend using `backend/Dockerfile`. It installs `libexpat1` and CA certificates before Python packages, then imports Rasterio, PyProj, and the API during the build. If Render reports `libexpat.so.1` missing, deploy the updated Dockerfile; installing another Python package does not supply this OS library.
+
+The frontend build verifies Cesium textures/workers and MediaPipe WASM at their public paths. The static-copy plugin preserves source directories by default, so the config explicitly strips the dependency path prefix. Do not remove these rename settings: missing texture URLs can return the SPA HTML and cause image decode failures.

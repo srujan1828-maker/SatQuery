@@ -40,10 +40,12 @@ export default function GlobeViewer({ lat, lon, radius, onSelect, result }) {
   useEffect(() => {
     let v;
     let alive = true;
+    let removeRenderError;
     try {
       const token = import.meta.env.VITE_CESIUM_ION_TOKEN;
       if (token) Ion.defaultAccessToken = token;
       v = new Viewer(host.current, {
+        showRenderLoopErrors: false,
         animation: false,
         timeline: false,
         baseLayerPicker: false,
@@ -65,6 +67,11 @@ export default function GlobeViewer({ lat, lon, radius, onSelect, result }) {
       });
       v.resolutionScale = Math.min(window.devicePixelRatio || 1, 1.5);
       viewer.current = v;
+      removeRenderError = v.scene.renderError.addEventListener(() => {
+        if (!alive) return;
+        setReady(false);
+        setError("3D rendering stopped. Switch to the 2D map, or reload to retry.");
+      });
       v.scene.screenSpaceCameraController.minimumZoomDistance = 100;
       v.screenSpaceEventHandler.setInputAction((e) => {
         const point = v.camera.pickEllipsoid(
@@ -89,6 +96,8 @@ export default function GlobeViewer({ lat, lon, radius, onSelect, result }) {
     }
     return () => {
       alive = false;
+      removeRenderError?.();
+      viewer.current = null;
       if (v && !v.isDestroyed()) v.destroy();
     };
   }, []);
