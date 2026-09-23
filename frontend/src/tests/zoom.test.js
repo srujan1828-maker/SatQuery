@@ -19,7 +19,7 @@ it("supports one-hand up/down zoom only in dedicated mode", () => {
   const a = gestureIntent([pinch(0.5, 0.7)], null, settings);
   expect(gestureIntent([pinch(0.5, 0.6)], a, settings).zoom).toBeLessThan(0);
   expect(gestureIntent([pinch(0.5, 0.8)], a, settings).zoom).toBeGreaterThan(0);
-  expect(gestureIntent([pinch(0.5, 0.7)]).mode).toBe("orbit");
+  expect(gestureIntent([pinch(0.5, 0.7)], null, { mode: "orbit" }).mode).toBe("orbit");
 });
 it("stops on hand loss and does not jump between zoom sources", () => {
   const a = gestureIntent([palm(0.3), palm(0.7)]);

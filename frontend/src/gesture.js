@@ -33,6 +33,9 @@ export function gestureIntent(hands, previous, { mode = "auto", sensitivity = 1 
     const delta = previous?.mode === "zoom" && previous.source === source ? previous.span - span : 0;
     return { mode: "zoom", source, span, zoom: Math.abs(delta) < 0.004 ? 0 : clamp(delta * 2 * gain, 0.08) };
   }
+  if (mode === "auto" || (mode === "orbit" && palms.length === 1 && !pinched.length)) {
+    return gestureIntent(valid, previous, { mode: "easy", sensitivity });
+  }
   // In dedicated Zoom mode, one pinched hand acts as a vertical zoom slider.
   if (mode === "zoom" && pinched.length === 1) {
     const y = pinched[0][0].y;
