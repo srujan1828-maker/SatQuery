@@ -337,3 +337,9 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+.gesture-status { color: #84e5cf; padding: 8px 12px; border: 1px solid #36556a; border-radius: 8px; }
+.gesture-guide { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; width: 100%; }
+.gesture-guide > div { padding: 12px; border: 1px solid #36556a; border-radius: 10px; background: #0d1926; }
+.gesture-guide strong { display: block; color: #84e5cf; margin-bottom: 6px; }
+.gesture-guide span { font-size: 13px; line-height: 1.5; }

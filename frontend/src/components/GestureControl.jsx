@@ -4,9 +4,19 @@ import { gestureIntent } from "../gesture.js";
 export default function GestureControl({ onIntent, overrideTarget }) {
   const [active, setActive] = useState(false);
   const [status, setStatus] = useState("Off");
+  const [controlMode, setControlMode] = useState("auto");
+  const [sensitivity, setSensitivity] = useState(1);
+  const settings = useRef({ mode: "auto", sensitivity: 1 });
   const video = useRef(null);
   const session = useRef(null);
   const callback = useRef(onIntent);
+  const changeSettings = (mode, gain) => {
+    settings.current = { mode, sensitivity: gain };
+    setControlMode(mode);
+    setSensitivity(gain);
+    if (session.current) session.current.previous = null;
+    callback.current({ mode: null });
+  };
   useEffect(() => { callback.current = onIntent; }, [onIntent]);
 
   const release = () => {
@@ -102,7 +112,7 @@ export default function GestureControl({ onIntent, overrideTarget }) {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Canvas unavailable");
-      setStatus("Ready — pinch to rotate; two pinches to zoom");
+      setStatus("Ready — pinch to rotate; spread two palms to zoom in");
       const tick = () => {
         if (s.cancelled) return;
         const started = performance.now();
@@ -114,11 +124,13 @@ export default function GestureControl({ onIntent, overrideTarget }) {
             canvas.height = Math.max(1, Math.round(320 * v.videoHeight / v.videoWidth));
             context.drawImage(v, 0, 0, canvas.width, canvas.height);
             const { landmarks } = model.detectForVideo(canvas, started);
-            const intent = gestureIntent(landmarks, s.previous);
+            const intent = gestureIntent(landmarks, s.previous, settings.current);
             s.previous = intent;
             callback.current(intent);
             s.lastDetection = performance.now();
-            setStatus(intent.mode ? `Active: ${intent.mode}` : "Tracking — pinch to move; release to stop");
+            setStatus(intent.mode === "zoom"
+              ? (intent.zoom < 0 ? "Zooming in" : intent.zoom > 0 ? "Zooming out" : "Zoom ready — move hands apart or together")
+              : intent.mode === "orbit" ? "Rotating Earth" : "Paused — show two open palms or pinch to rotate");
           } else if (performance.now() - (s.lastDetection || 0) > 600) {
             s.previous = null;
             callback.current({ mode: null });
@@ -143,7 +155,25 @@ export default function GestureControl({ onIntent, overrideTarget }) {
   return <div className="globe-tools">
     <button onClick={active ? stop : start}>{active ? "Stop camera / gestures" : "Enable gesture control"}</button>
     <video className="gesture-video" ref={video} muted playsInline hidden={!active} />
-    <span role="status">{status}</span>
-    <p className="muted">Low-power browser tracking. Pinch to rotate; use two pinches to zoom. Release stops; Escape or mouse/touch disables. Video stays on this device. Model downloads on first use.</p>
+    <span role="status" className="gesture-status">{status}</span>
+    <label>Control mode
+      <select value={controlMode} onChange={e => changeSettings(e.target.value, sensitivity)}>
+        <option value="auto">Auto — rotate + zoom</option>
+        <option value="orbit">Rotate only</option>
+        <option value="zoom">Zoom only — one or two hands</option>
+      </select>
+    </label>
+    <label>Zoom sensitivity: {sensitivity.toFixed(1)}×
+      <input type="range" min="0.5" max="2" step="0.1" value={sensitivity}
+        onChange={e => changeSettings(controlMode, Number(e.target.value))} />
+    </label>
+    <div className="gesture-guide" aria-label="Gesture guide">
+      <div><strong>↔ Zoom in</strong><span>Show two open palms and spread them apart.</span></div>
+      <div><strong>→ ← Zoom out</strong><span>Bring your two open palms closer together.</span></div>
+      <div><strong>↻ Rotate</strong><span>Pinch thumb + index on one hand and move it.</span></div>
+      <div><strong>↑ ↓ One-hand zoom</strong><span>Select Zoom only. Pinch and move up to zoom in, down to zoom out.</span></div>
+      <div><strong>Pause</strong><span>Lower your hands or close both fists. Escape turns the camera off.</span></div>
+    </div>
+    <p className="muted">Keep both hands visible and facing the camera. Two pinches also support spread-to-zoom. Mouse/touch disables gestures. Video stays on this device. Model downloads on first use.</p>
   </div>;
 }
