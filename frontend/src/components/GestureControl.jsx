@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from "react";
-import { gestureIntent } from "../gesture.js";
+import { gestureIntent, trackingDelay } from "../gesture.js";
 
 export default function GestureControl({ onIntent, overrideTarget }) {
   const [active, setActive] = useState(false);
   const [status, setStatus] = useState("Off");
-  const [controlMode, setControlMode] = useState("auto");
+  const [controlMode, setControlMode] = useState("easy");
   const [sensitivity, setSensitivity] = useState(1);
-  const settings = useRef({ mode: "auto", sensitivity: 1 });
+  const settings = useRef({ mode: "easy", sensitivity: 1 });
   const video = useRef(null);
   const session = useRef(null);
   const callback = useRef(onIntent);
@@ -112,7 +112,7 @@ export default function GestureControl({ onIntent, overrideTarget }) {
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Canvas unavailable");
-      setStatus("Ready — pinch to rotate; spread two palms to zoom in");
+      setStatus("Ready — open hand to rotate; pinch and move up/down to zoom");
       const tick = () => {
         if (s.cancelled) return;
         const started = performance.now();
@@ -120,24 +120,32 @@ export default function GestureControl({ onIntent, overrideTarget }) {
         try {
           if (v?.readyState >= 2 && v.currentTime !== s.lastFrame) {
             s.lastFrame = v.currentTime;
-            canvas.width = 320;
-            canvas.height = Math.max(1, Math.round(320 * v.videoHeight / v.videoWidth));
+            const height = Math.max(1, Math.round(320 * v.videoHeight / v.videoWidth));
+            if (canvas.width !== 320) canvas.width = 320;
+            if (canvas.height !== height) canvas.height = height;
             context.drawImage(v, 0, 0, canvas.width, canvas.height);
             const { landmarks } = model.detectForVideo(canvas, started);
             const intent = gestureIntent(landmarks, s.previous, settings.current);
             s.previous = intent;
             callback.current(intent);
             s.lastDetection = performance.now();
-            setStatus(intent.mode === "zoom"
-              ? (intent.zoom < 0 ? "Zooming in" : intent.zoom > 0 ? "Zooming out" : "Zoom ready — move hands apart or together")
-              : intent.mode === "orbit" ? "Rotating Earth" : "Paused — show two open palms or pinch to rotate");
+            s.moving = Boolean(intent.mode);
+            const nextStatus = intent.mode === "zoom"
+              ? (intent.zoom < 0 ? "Zooming in" : intent.zoom > 0 ? "Zooming out" : "Zoom ready")
+              : intent.mode === "orbit" ? "Rotating Earth" : "Paused — show an open hand";
+            if (nextStatus !== s.status && started - (s.statusAt || 0) >= 250) {
+              s.status = nextStatus;
+              s.statusAt = started;
+              setStatus(nextStatus);
+            }
           } else if (performance.now() - (s.lastDetection || 0) > 600) {
             s.previous = null;
+            s.moving = false;
             callback.current({ mode: null });
           }
           // No queued frames: cap at 12 fps and leave at least as much time
           // for globe interaction as inference used on slower devices.
-          s.timer = setTimeout(tick, Math.max(83, performance.now() - started));
+          s.timer = setTimeout(tick, trackingDelay(performance.now() - started, s.moving));
         } catch (error) {
           console.warn("Hand tracking inference failed", error);
           fail("Hand tracking failed while processing video. Stop other camera apps and retry.");
@@ -158,6 +166,7 @@ export default function GestureControl({ onIntent, overrideTarget }) {
     <span role="status" className="gesture-status">{status}</span>
     <label>Control mode
       <select value={controlMode} onChange={e => changeSettings(e.target.value, sensitivity)}>
+        <option value="easy">Easy — one hand</option>
         <option value="auto">Auto — rotate + zoom</option>
         <option value="orbit">Rotate only</option>
         <option value="zoom">Zoom only — one or two hands</option>
@@ -167,13 +176,17 @@ export default function GestureControl({ onIntent, overrideTarget }) {
       <input type="range" min="0.5" max="2" step="0.1" value={sensitivity}
         onChange={e => changeSettings(controlMode, Number(e.target.value))} />
     </label>
-    <div className="gesture-guide" aria-label="Gesture guide">
+    {controlMode === "easy" ? <div className="gesture-guide" aria-label="Gesture guide">
+      <div><strong>Rotate</strong><span>Show one open hand and move it gently.</span></div>
+      <div><strong>Zoom</strong><span>Pinch thumb and index. Move up to zoom in, down to zoom out.</span></div>
+      <div><strong>Pause</strong><span>Close your fist or lower your hand. Escape turns the camera off.</span></div>
+    </div> : <div className="gesture-guide" aria-label="Gesture guide">
       <div><strong>↔ Zoom in</strong><span>Show two open palms and spread them apart.</span></div>
       <div><strong>→ ← Zoom out</strong><span>Bring your two open palms closer together.</span></div>
       <div><strong>↻ Rotate</strong><span>Pinch thumb + index on one hand and move it.</span></div>
       <div><strong>↑ ↓ One-hand zoom</strong><span>Select Zoom only. Pinch and move up to zoom in, down to zoom out.</span></div>
       <div><strong>Pause</strong><span>Lower your hands or close both fists. Escape turns the camera off.</span></div>
-    </div>
-    <p className="muted">Keep both hands visible and facing the camera. Two pinches also support spread-to-zoom. Mouse/touch disables gestures. Video stays on this device. Model downloads on first use.</p>
+    </div>}
+    <p className="muted">Keep your hand facing the camera. Start with Easy mode; two-hand controls are available in Auto. Mouse/touch disables gestures. Video stays on this device. Model downloads on first use.</p>
   </div>;
 }

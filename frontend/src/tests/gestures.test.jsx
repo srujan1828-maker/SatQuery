@@ -21,7 +21,7 @@ it("starts browser CPU tracking and closes model/camera on Escape", async () => 
   const stop = setup();
   render(<GestureControl onIntent={() => {}} />);
   fireEvent.click(screen.getByRole("button"));
-  await screen.findByText(/Ready — pinch/);
+  await screen.findByText(/Ready — open hand/);
   expect(create.mock.calls[0][1]).toMatchObject({ baseOptions: { delegate: "CPU" }, numHands: 2 });
   fireEvent.keyDown(window, { key: "Escape" });
   expect(stop).toHaveBeenCalledOnce();
