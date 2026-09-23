@@ -1,3 +1,5 @@
+> Historical prototype document. For current capabilities, setup, and limitations, see [README.md](README.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
 # SatQuery: Comprehensive Technical Project Report
 
 **Project Title**: SatQuery — Satellite Intelligence, Queried Clearly  

@@ -1,3 +1,5 @@
+> Historical prototype document. For current capabilities, setup, and limitations, see [README.md](README.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
 # Satellite Vision-Language Assistant — Team Build Plan (3 people)
 
 This document is the single source of truth for how the three tracks (AI/Model, Backend, Frontend) integrate. **Nobody should deviate from the data structures in Part 0 without updating this doc and notifying the other two people first** — this is the #1 rule for the whole project. Most integration failures on a split team come from silent drift between what one person built and what another person assumed.

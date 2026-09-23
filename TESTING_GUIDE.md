@@ -1,3 +1,5 @@
+> Historical prototype document. For current capabilities, setup, and limitations, see [README.md](README.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
 # SatQuery: Comprehensive QA Test Suite & Verification Guide
 
 This document defines the complete Quality Assurance (QA) test plan, automated test suites, and 29 end-to-end manual test cases for the **SatQuery** satellite intelligence platform.
