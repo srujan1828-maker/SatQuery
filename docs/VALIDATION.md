@@ -23,3 +23,9 @@ Interview three design partners, measure report-completion time and correction b
 ## Live upstream smoke checks
 
 Sentinel-2 and Sentinel-1 catalog queries returned candidates with expected assets during implementation. Direct GDAL source-raster reads encountered a local certificate issuer trust error, including with the standard OS CA bundle. Certificate verification was left enabled. Confirm source COG reads in the target deployment before promotion; do not disable TLS verification to work around this error.
+
+## Browser gesture compatibility follow-up
+
+Replaced the module-worker tracker with a lazy-loaded browser Hand Landmarker using the same official float16 model. This is a low-power configuration, not a separately named Lite model. Camera requests target 320x240 at 15 fps; inference uses downscaled frames with a maximum of 12 calls/sec and adaptive idle time. CPU inference can still briefly block the UI on slow hardware. Two-hand zoom is retained.
+
+Frontend checks: 12 tests passed, including Escape resource cleanup, cancellation during model initialization, and HTTPS prerequisite messaging. Production build and WASM/static asset checks pass. Physical-webcam/browser performance still requires device testing. Verify permission denial, blocked model downloads, hand loss, tab hiding, and camera release.
