@@ -1,0 +1,228 @@
+import { useState, useRef, useEffect } from "react";
+export default function EvidenceViewer({ images }) {
+  const [zoom, setZoom] = useState(1),
+    [actual, setActual] = useState(false),
+    [split, setSplit] = useState(50);
+  const [contrast, setContrast] = useState(1),
+    [brightness, setBrightness] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 }),
+    [errors, setErrors] = useState({});
+  const [availableWidth, setAvailableWidth] = useState(600);
+  const host = useRef(null),
+    drag = useRef(null);
+  const first = images[0];
+  useEffect(() => {
+    const observer = new ResizeObserver(([entry]) =>
+      setAvailableWidth(entry.contentRect.width),
+    );
+    if (host.current) observer.observe(host.current);
+    return () => observer.disconnect();
+  }, []);
+  if (!first) return null;
+  const width =
+    (actual ? first.width : Math.min(availableWidth, first.width)) * zoom;
+  const height = (width * first.height) / first.width;
+  const reset = () => {
+    setZoom(1);
+    setActual(false);
+    setOffset({ x: 0, y: 0 });
+    setContrast(1);
+    setBrightness(1);
+  };
+  return (
+    <section className="card evidence">
+      <div className="toolbar">
+        <h2>Observation evidence</h2>
+        <div className="actions">
+          <button
+            onClick={() => {
+              setActual(false);
+              setZoom(1);
+            }}
+          >
+            Fit
+          </button>
+          <button
+            onClick={() => {
+              setActual(true);
+              setZoom(1);
+            }}
+          >
+            Actual pixels
+          </button>
+          <button
+            aria-label="Zoom out"
+            onClick={() => setZoom((z) => Math.max(0.5, z / 1.4))}
+          >
+            −
+          </button>
+          <button
+            aria-label="Zoom in"
+            onClick={() => setZoom((z) => Math.min(8, z * 1.4))}
+          >
+            +
+          </button>
+          <button onClick={reset}>Reset / original</button>
+          <button
+            onClick={() => host.current?.requestFullscreen?.().catch(() => {})}
+          >
+            Fullscreen
+          </button>
+        </div>
+      </div>
+      <div
+        ref={host}
+        className="evidence-viewport"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          drag.current = {
+            x: e.clientX,
+            y: e.clientY,
+            ...{ ox: offset.x, oy: offset.y },
+          };
+        }}
+        onPointerMove={(e) => {
+          if (drag.current)
+            setOffset({
+              x: drag.current.ox + e.clientX - drag.current.x,
+              y: drag.current.oy + e.clientY - drag.current.y,
+            });
+        }}
+        onPointerUp={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
+        tabIndex={0}
+        aria-label="Evidence view. Arrow keys pan; plus and minus zoom."
+        onKeyDown={(e) => {
+          if (
+            ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
+          ) {
+            e.preventDefault();
+            setOffset((o) => ({
+              x:
+                o.x +
+                (e.key === "ArrowRight" ? 30 : e.key === "ArrowLeft" ? -30 : 0),
+              y:
+                o.y +
+                (e.key === "ArrowDown" ? 30 : e.key === "ArrowUp" ? -30 : 0),
+            }));
+          }
+          if (e.key === "+") setZoom((z) => Math.min(8, z * 1.4));
+          if (e.key === "-") setZoom((z) => Math.max(0.5, z / 1.4));
+        }}
+      >
+        <div
+          className="raster-stage"
+          style={{
+            width,
+            height,
+            transform: `translate(${offset.x}px,${offset.y}px)`,
+          }}
+        >
+          {images.slice(0, 2).map((im, i) => (
+            <div
+              key={im.id}
+              className="raster-layer"
+              style={{
+                zIndex: 2 - i,
+                clipPath:
+                  i === 0 && images.length > 1
+                    ? `inset(0 ${100 - split}% 0 0)`
+                    : undefined,
+              }}
+            >
+              {errors[im.id] ? (
+                <p role="alert">
+                  Evidence expired or failed to load. Run the query again.
+                </p>
+              ) : (
+                <img
+                  src={im.url}
+                  alt={`${im.sensor} ${im.role}, acquired ${im.date}`}
+                  draggable={false}
+                  onError={() => setErrors((v) => ({ ...v, [im.id]: true }))}
+                  style={{
+                    filter: `contrast(${contrast}) brightness(${brightness})`,
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+      {images.length > 1 && (
+        <label className="range">
+          Compare {images[0].role} / {images[1].role}
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={split}
+            onChange={(e) => setSplit(+e.target.value)}
+          />
+        </label>
+      )}
+      <div className="toolbar">
+        <label>
+          Contrast{" "}
+          <input
+            type="range"
+            min=".5"
+            max="2"
+            step=".05"
+            value={contrast}
+            onChange={(e) => setContrast(+e.target.value)}
+          />
+        </label>
+        <label>
+          Brightness{" "}
+          <input
+            type="range"
+            min=".5"
+            max="2"
+            step=".05"
+            value={brightness}
+            onChange={(e) => setBrightness(+e.target.value)}
+          />
+        </label>
+      </div>
+      <p className="muted">
+        {width > first.width
+          ? "Magnified beyond output pixels — no additional observed detail. "
+          : "Fit view does not enlarge the raster. "}
+        Adjustments affect display only; both layers share the same settings.
+        Drag or use arrow keys to pan.
+      </p>
+      {images.map((im) => (
+        <details key={im.id}>
+          <summary>
+            {im.sensor} · {im.role} · {im.date} ·{" "}
+            {Math.round(im.usable_fraction * 100)}% usable
+          </summary>
+          <dl>
+            <dt>Requested / acquired</dt>
+            <dd>
+              {im.requested_date} / {im.date} ({im.date_offset_days} days)
+            </dd>
+            <dt>Source sampling / output</dt>
+            <dd>
+              {im.resolution_m} m · {im.width} × {im.height} px
+            </dd>
+            <dt>Rendering</dt>
+            <dd>{im.render_method}</dd>
+            <dt>Scene</dt>
+            <dd>
+              <a href={im.source_url} target="_blank" rel="noreferrer">
+                {im.scene_id}
+              </a>
+            </dd>
+            <dt>Evidence SHA-256</dt>
+            <dd className="hash">{im.sha256}</dd>
+          </dl>
+          <a href={im.url} target="_blank" rel="noreferrer">
+            Open original evidence PNG
+          </a>
+        </details>
+      ))}
+    </section>
+  );
+}

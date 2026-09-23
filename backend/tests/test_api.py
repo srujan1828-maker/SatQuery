@@ -1,283 +1,330 @@
 import asyncio
-import struct
 from datetime import date
-from urllib.parse import parse_qs, urlparse
-
-import httpx
+from hashlib import sha256
+from io import BytesIO
+import numpy as np
+import pytest
+import rasterio
+from PIL import Image
 from fastapi.testclient import TestClient
-
-from app.main import app
-from app.models import Location, QueryRequest
-from app.services import Sentinel1Scene, SentinelScene, Settings, geochat_answer, geochat_infer_url, inference_image, sentinel_tile_url
-
-client = TestClient(app)
+from pydantic import ValidationError
+from app import main, pipeline, imagery
+from app.models import QueryRequest, ImageResult
+from app.imagery import Observation, EvidenceUnavailable, aoi_grid, water_change
 
 
-def test_vqa_matches_contract_b(monkeypatch) -> None:
-    async def scene(*_args: object) -> SentinelScene:
-        return SentinelScene("S2A_TEST_SCENE", date(2024, 5, 12), "https://imagery.example/scene.png")
-
-    async def imagery(*_args: object) -> tuple[bytes, str]:
-        return inference_image(), "image/png"
-
-    monkeypatch.setattr("app.services.sentinel_scene", scene)
-    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
-    response = client.post("/api/query", json={"query": "What is here?", "location": {"lat": 28.6, "lon": 77.2}, "date": "2024-05-12", "mode": "vqa"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "vqa"
-    assert len(body["images"]) == 1
-    assert body["images"][0]["role"] == "single"
-    assert body["error"] is None
+def req(**changes):
+    return QueryRequest.model_validate(
+        {
+            "query": "Inspect water",
+            "location": {"lat": 0, "lon": 0},
+            "date": "2024-05-12",
+            **changes,
+        }
+    )
 
 
-def test_change_requires_date_range_as_shaped_error() -> None:
-    response = client.post("/api/query", json={"query": "compare", "location": {"lat": 28.6, "lon": 77.2}, "mode": "change_detection"})
-    assert response.status_code == 200
-    assert response.json()["error"]["code"] == "invalid_query"
-    assert response.json()["confidence_flag"] == "uncertain"
+def obs(request, target, role, water=None):
+    bbox, size, transform = aoi_grid(request)
+    size = 4
+    transform = rasterio.transform.from_bounds(*bbox, size, size)
+    content = b"verified-fixture-bytes"
+    image = ImageResult(
+        id=role,
+        url="/media/artifacts/" + sha256(content).hexdigest() + ".png",
+        sensor="sentinel-2",
+        date=target,
+        role=role,
+        scene_id=str(target),
+        collection="sentinel-2-l2a",
+        source_url="https://example.test/catalog",
+        requested_date=target,
+        date_offset_days=0,
+        bbox=bbox,
+        width=size,
+        height=size,
+        resolution_m=10,
+        sha256=sha256(content).hexdigest(),
+        usable_fraction=1,
+        render_method="test fixture",
+    )
+    return Observation(
+        image,
+        content,
+        np.ones((size, size), bool),
+        np.zeros((size, size), bool) if water is None else water,
+        transform,
+    )
 
 
-def test_fusion_is_cached_and_needs_no_location() -> None:
-    response = client.post("/api/query", json={"query": "show the flood demo", "mode": "fusion_demo"})
-    body = response.json()
-    assert response.status_code == 200
-    assert [item["role"] for item in body["images"]] == ["optical", "radar"]
-    assert body["used_cache_fallback"] is True
+@pytest.fixture(autouse=True)
+def isolated(monkeypatch, tmp_path):
+    monkeypatch.delenv("GEOCHAT_ENDPOINT_URL", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setattr(main, "DB", tmp_path / "jobs.db")
+    monkeypatch.setattr(imagery, "ARTIFACTS", tmp_path)
 
 
-def test_settings_read_optional_service_environment(monkeypatch) -> None:
-    monkeypatch.setenv("GEMINI_API_KEY", "test-gemini-key")
-    monkeypatch.setenv("GEOCHAT_ENDPOINT_URL", "https://geochat.example")
-    monkeypatch.setenv("FRONTEND_URL", "https://frontend.example/,https://custom.example")
-    settings = Settings.from_environment()
-    assert settings.gemini_api_key == "test-gemini-key"
-    assert settings.geochat_url == "https://geochat.example"
-    assert settings.geochat_timeout_seconds == 90
-    assert settings.geochat_attempts == 2
-    assert settings.frontend_origins == ("https://frontend.example", "https://custom.example")
+def test_no_model_returns_only_verified_evidence(monkeypatch):
+    monkeypatch.setattr(
+        pipeline, "fetch_observation", lambda r, d, role: obs(r, d, role)
+    )
+    result = asyncio.run(pipeline.handle_query(req()))
+    assert result.analysis_status == "partial"
+    assert result.confidence_flag == "uncertain"
+    assert result.overlay_boxes == []
+    assert len(result.images) == 1
 
 
-def test_query_request_resolves_date_annotation() -> None:
-    request = QueryRequest.model_validate({"query": "What is here?", "date": "2024-05-12"})
-    assert request.date.isoformat() == "2024-05-12"
+def test_missing_radar_is_not_replaced(monkeypatch):
+    def fetch(r, d, role, radar=False):
+        if radar:
+            raise EvidenceUnavailable("No radar")
+        return obs(r, d, role)
+
+    monkeypatch.setattr(pipeline, "fetch_observation", fetch)
+    result = asyncio.run(pipeline.handle_query(req(mode="fusion")))
+    assert [i.role for i in result.images] == ["optical"]
+    assert result.analysis_status == "partial"
+    assert result.overlay_boxes == []
+    assert "radar is unavailable" in result.answer_text
 
 
-def test_geochat_endpoint_accepts_base_or_infer_url() -> None:
-    assert geochat_infer_url("https://geochat.example") == "https://geochat.example/infer"
-    assert geochat_infer_url("https://geochat.example/infer/") == "https://geochat.example/infer"
+def test_missing_imagery_never_invokes_model(monkeypatch):
+    def fail(*args):
+        raise EvidenceUnavailable("No imagery")
+
+    async def forbidden(*args, **kwargs):
+        pytest.fail("Model must not run without evidence")
+
+    monkeypatch.setattr(pipeline, "fetch_observation", fail)
+    monkeypatch.setattr(pipeline, "geochat_answer", forbidden)
+    result = asyncio.run(pipeline.handle_query(req()))
+    assert not result.images
+    assert result.analysis_status == "unavailable"
 
 
-def test_inference_image_is_a_model_sized_rgb_png() -> None:
-    image = inference_image()
+def test_paired_model_gets_both_inputs_and_language(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-only")
 
-    assert image.startswith(b"\x89PNG\r\n\x1a\n")
-    assert image[12:16] == b"IHDR"
-    assert struct.unpack(">II", image[16:24]) == (512, 512)
-    assert image[25] == 2  # RGB color type
+    def fetch(r, d, role):
+        o = obs(r, d, role)
+        o.content = role.encode()
+        return o
 
+    async def gemini(prompt, data, key, **kwargs):
+        assert "Hindi" in prompt and data == b"after"
+        assert kwargs["comparison_image_data"] == b"before"
+        return "उत्तर", [], False
 
-def test_sentinel_tile_url_is_centered_on_the_requested_location() -> None:
-    url = sentinel_tile_url("S2A_TEST_SCENE", Location(lat=28.6139, lon=77.2090))
-    query = parse_qs(urlparse(url).query)
+    async def forbidden(*args, **kwargs):
+        pytest.fail("One-image GeoChat must not handle paired tasks")
 
-    assert url.startswith("https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/WebMercatorQuad/14/")
-    assert "@2x" in url
-    assert query["collection"] == ["sentinel-2-l2a"]
-    assert query["item"] == ["S2A_TEST_SCENE"]
-    assert query["assets"] == ["visual"]
-
-
-def test_geochat_retries_a_transient_connection_failure(monkeypatch) -> None:
-    class RetryingClient:
-        attempts = 0
-
-        async def __aenter__(self) -> "RetryingClient":
-            return self
-
-        async def __aexit__(self, *_args: object) -> None:
-            return None
-
-        async def post(self, *_args: object, **_kwargs: object):
-            RetryingClient.attempts += 1
-            if RetryingClient.attempts == 1:
-                raise httpx.ConnectError("temporary tunnel error")
-            return httpx.Response(
-                200,
-                json={"answer": "A model response", "model_confident": True, "boxes": []},
-                request=httpx.Request("POST", "https://geochat.example/infer"),
+    monkeypatch.setattr(pipeline, "fetch_observation", fetch)
+    monkeypatch.setattr(pipeline, "gemini_answer", gemini)
+    monkeypatch.setattr(pipeline, "geochat_answer", forbidden)
+    result = asyncio.run(
+        pipeline.handle_query(
+            req(
+                mode="change_detection",
+                language="hi",
+                date_range={"start": "2023-05-12", "end": "2024-05-12"},
             )
-
-    async def no_sleep(_seconds: float) -> None:
-        return None
-
-    monkeypatch.setattr("app.services.httpx.AsyncClient", lambda **_kwargs: RetryingClient())
-    monkeypatch.setattr("app.services.asyncio.sleep", no_sleep)
-    settings = Settings(
-        geochat_url="https://geochat.example",
-        geochat_timeout_seconds=1,
-        geochat_attempts=2,
-        gemini_api_key=None,
-        frontend_origins=(),
-        demo_mode=False,
+        )
     )
-
-    answer, boxes, confident, error = asyncio.run(geochat_answer("What is here?", settings))
-
-    assert RetryingClient.attempts == 2
-    assert answer == "A model response"
-    assert confident is True
-    assert error is None
+    assert result.answer_text == "उत्तर" and result.confidence_flag == "uncertain"
+    assert not result.overlay_boxes
 
 
-def test_fusion_with_location_and_date_queries_optical_and_radar(monkeypatch) -> None:
-    async def optical_scene(*_args: object) -> SentinelScene:
-        return SentinelScene("S2A_TEST_OPTICAL", date(2024, 5, 12), "https://imagery.example/optical.png")
-
-    async def radar_scene(*_args: object) -> Sentinel1Scene:
-        return Sentinel1Scene("S1A_TEST_RADAR", date(2024, 5, 13), "https://imagery.example/radar.png")
-
-    async def imagery(*_args: object) -> tuple[bytes, str]:
-        return inference_image(), "image/png"
-
-    monkeypatch.setattr("app.services.sentinel_scene", optical_scene)
-    monkeypatch.setattr("app.services.sentinel1_scene", radar_scene)
-    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
-
-    response = client.post(
-        "/api/query",
-        json={
-            "query": "Analyze flood extent using optical and radar fusion",
-            "location": {"lat": 28.6139, "lon": 77.2090, "name": "New Delhi"},
-            "date": "2024-05-12",
-            "mode": "fusion_demo",
-        },
-    )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "fusion_demo"
-    assert body["used_cache_fallback"] is False
-    roles = [img["role"] for img in body["images"]]
-    assert "optical" in roles
-    assert "radar" in roles
-
-
-def test_change_detection_routes_to_geochat(monkeypatch) -> None:
-    async def scene(loc, target_date: date) -> SentinelScene:
-        return SentinelScene(f"S2A_{target_date}", target_date, f"https://imagery.example/{target_date}.png")
-
-    async def imagery(*_args: object) -> tuple[bytes, str]:
-        return inference_image(), "image/png"
-
-    async def mock_geochat(prompt, settings, *args, **kwargs):
-        return "Kedarnath shows significant debris clearance.", [{"x_min": 0.3, "y_min": 0.3, "x_max": 0.7, "y_max": 0.7, "label": "cleared zone"}], True, None
-
-    monkeypatch.setattr("app.services.sentinel_scene", scene)
-    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
-    monkeypatch.setattr("app.services.geochat_answer", mock_geochat)
-
-    response = client.post(
-        "/api/query",
-        json={
-            "query": "Detect debris changes between baseline and current observation",
-            "location": {"lat": 30.7346, "lon": 79.0669, "name": "Kedarnath"},
-            "date_range": {"start": "2013-05-01", "end": "2024-05-01"},
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"date": "2999-01-01"},
+        {"location": {"lat": 90, "lon": 0}},
+        {"location": {"lat": 0, "lon": 181}},
+        {"query": " "},
+        {"radius_km": 100},
+        {
             "mode": "change_detection",
+            "date_range": {"start": "2024-01-01", "end": "2024-01-01"},
         },
+    ],
+)
+def test_invalid_queries(changes):
+    with pytest.raises(ValidationError):
+        req(**changes)
+
+
+def test_zero_coordinates_and_dateline():
+    bbox, size, _ = aoi_grid(req(radius_km=0.25))
+    assert bbox[0] < 0 < bbox[2] and bbox[1] < 0 < bbox[3]
+    assert size == 50
+    with pytest.raises(EvidenceUnavailable):
+        aoi_grid(req(location={"lat": 0, "lon": 180}))
+
+
+def test_change_excludes_invalid_pixels_and_handles_unchanged():
+    r = req()
+    b = obs(r, date(2023, 1, 1), "before")
+    a = obs(r, date(2024, 1, 1), "after")
+    metrics, geo = water_change(b, a)
+    assert metrics["water_gain_ha"] == 0 and geo["features"] == []
+    a.water[0, 0] = True
+    metrics, geo = water_change(b, a)
+    assert (
+        metrics["water_gain_ha"] > 0
+        and geo["features"][0]["properties"]["change"] == "water_gain"
     )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "change_detection"
-    assert "debris clearance" in body["answer_text"]
-    assert "debris clearance" in body["change_summary"]
-    assert body["confidence_flag"] == "high"
-    assert len(body["overlay_boxes"]) > 0
+    b.valid[0, 0] = False
+    metrics, geo = water_change(b, a)
+    assert metrics["water_gain_ha"] == 0 and not geo["features"]
+    with pytest.raises(EvidenceUnavailable):
+        water_change(a, a)
 
 
-def test_change_detection_routes_to_gemini_if_geochat_unconfigured(monkeypatch) -> None:
-    async def scene(loc, target_date: date) -> SentinelScene:
-        return SentinelScene(f"S2A_{target_date}", target_date, f"https://imagery.example/{target_date}.png")
+def test_wrong_grid_rejected():
+    r = req()
+    b = obs(r, date(2023, 1, 1), "before")
+    a = obs(r, date(2024, 1, 1), "after")
+    a.image.bbox = [1, 1, 2, 2]
+    with pytest.raises(EvidenceUnavailable):
+        water_change(b, a)
 
-    async def imagery(*_args: object) -> tuple[bytes, str]:
-        return inference_image(), "image/png"
 
-    async def mock_gemini(*args, **kwargs):
-        return "Gemini Vision detected flood inundation receding.", [{"x_min": 0.2, "y_min": 0.2, "x_max": 0.8, "y_max": 0.8, "label": "water receding"}], True
-
-    monkeypatch.setenv("GEMINI_API_KEY", "fake-key")
-    monkeypatch.setattr("app.services.sentinel_scene", scene)
-    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
-    monkeypatch.setattr("app.services.gemini_answer", mock_gemini)
-
-    response = client.post(
-        "/api/query",
-        json={
-            "query": "Assess water receding",
-            "location": {"lat": 26.1856, "lon": 91.7483, "name": "Brahmaputra"},
-            "date_range": {"start": "2023-06-01", "end": "2024-06-01"},
-            "mode": "change_detection",
-        },
+def test_real_local_raster_read_masks_and_hashes(monkeypatch, tmp_path):
+    r = req(radius_km=0.25)
+    bbox, size, t = aoi_grid(r)
+    assets = {}
+    for name, data in [
+        ("visual", np.full((3, size, size), 120, dtype="uint8")),
+        ("SCL", np.full((1, size, size), 6, dtype="uint8")),
+    ]:
+        if name == "SCL":
+            data[0, :10, :] = 9
+        path = tmp_path / f"{name}.tif"
+        with rasterio.open(
+            path,
+            "w",
+            driver="GTiff",
+            width=size,
+            height=size,
+            count=data.shape[0],
+            dtype="uint8",
+            crs="EPSG:4326",
+            transform=t,
+        ) as dst:
+            dst.write(data)
+        assets[name] = {"href": str(path)}
+    item = {
+        "id": "local-fixture",
+        "assets": assets,
+        "properties": {"datetime": "2024-05-12T00:00:00Z"},
+    }
+    monkeypatch.setattr(imagery, "catalog_candidates", lambda *args: [item])
+    monkeypatch.setattr(imagery.pc, "sign", lambda href: href)
+    o = imagery.fetch_observation(r, r.date, "single")
+    assert o.image.width == 50 and o.image.usable_fraction == 0.8
+    assert sha256(o.content).hexdigest() == o.image.sha256
+    assert (tmp_path / f"{o.image.sha256}.png").read_bytes() == o.content
+    pixels = np.asarray(Image.open(BytesIO(o.content)))
+    assert (
+        (pixels[:10, :, 3] == 0).all()
+        and (pixels[10:, :, 3] == 255).all()
+        and not o.water[:10].any()
     )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "change_detection"
-    assert "Gemini Vision detected" in body["answer_text"]
-    assert body["confidence_flag"] == "high"
 
 
-def test_fusion_mode_with_location_queries_optical_and_radar(monkeypatch) -> None:
-    async def optical_scene(*_args: object) -> SentinelScene:
-        return SentinelScene("S2A_TEST_OPTICAL", date(2024, 5, 12), "https://imagery.example/optical.png")
+def test_geocode_contract_and_artifact_restriction(monkeypatch):
+    async def geocode(q):
+        return [{"name": "Test", "lat": 0, "lon": 0}]
 
-    async def radar_scene(*_args: object) -> Sentinel1Scene:
-        return Sentinel1Scene("S1A_TEST_RADAR", date(2024, 5, 13), "https://imagery.example/radar.png")
-
-    async def imagery(*_args: object) -> tuple[bytes, str]:
-        return inference_image(), "image/png"
-
-    monkeypatch.setattr("app.services.sentinel_scene", optical_scene)
-    monkeypatch.setattr("app.services.sentinel1_scene", radar_scene)
-    monkeypatch.setattr("app.services.imagery_for_inference", imagery)
-
-    response = client.post(
-        "/api/query",
-        json={
-            "query": "Synthesize optical and radar features",
-            "location": {"lat": 28.6139, "lon": 77.2090, "name": "New Delhi"},
-            "date": "2024-05-12",
-            "mode": "fusion",
-        },
-    )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "fusion"
-    assert body["used_cache_fallback"] is False
-    roles = [img["role"] for img in body["images"]]
-    assert "optical" in roles
-    assert "radar" in roles
+    monkeypatch.setattr(main, "geocode_search", geocode)
+    main.GEOCODE_CACHE.clear()
+    with TestClient(main.app) as client:
+        assert client.get("/api/geocode?q=Test").json()["results"][0]["lat"] == 0
+        assert client.get("/media/artifacts/anything.png").status_code == 404
+        assert client.post("/api/query").status_code == 410
 
 
-def test_fusion_mode_requires_location() -> None:
-    response = client.post(
-        "/api/query",
-        json={
-            "query": "Synthesize optical and radar features",
-            "mode": "fusion",
-        },
-    )
-    assert response.status_code == 200
-    body = response.json()
-    assert body["mode"] == "fusion"
-    assert body["error"]["code"] == "invalid_query"
+def test_job_lifecycle_and_cancel(monkeypatch):
+    async def waiting(job_id, body):
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            main.update(job_id, status="cancelled", message="Cancelled")
+            raise
+        finally:
+            main.TASKS.pop(job_id, None)
+
+    monkeypatch.setattr(main, "execute", waiting)
+    with TestClient(main.app) as client:
+        response = client.post("/api/jobs", json=req().model_dump(mode="json"))
+        assert response.status_code == 202
+        job = response.json()["id"]
+        assert client.get(f"/api/jobs/{job}").json()["status"] == "queued"
+        assert client.delete(f"/api/jobs/{job}").json()["status"] == "cancelled"
+        assert client.get("/api/jobs/unknown").status_code == 404
 
 
-def test_geocode_endpoint_returns_autocomplete_suggestions() -> None:
-    response = client.get("/api/geocode?q=delhi")
-    assert response.status_code == 200
-    suggestions = response.json()
-    assert isinstance(suggestions, list)
-    assert len(suggestions) > 0
-    assert any("delhi" in s["name"].lower() for s in suggestions)
-    assert "lat" in suggestions[0] and "lon" in suggestions[0]
+def test_capacity_and_validation(monkeypatch):
+    monkeypatch.setattr(main, "MAX_JOBS", 0)
+    with TestClient(main.app) as client:
+        assert (
+            client.post("/api/jobs", json=req().model_dump(mode="json")).status_code
+            == 429
+        )
+        assert client.post("/api/jobs", json={}).status_code == 422
 
 
+def test_catalog_failure_is_explicit(monkeypatch):
+    import httpx
+
+    def fail(*args):
+        raise httpx.ConnectError("offline")
+
+    monkeypatch.setattr(imagery, "catalog_candidates", fail)
+    with pytest.raises(EvidenceUnavailable, match="catalog"):
+        imagery.fetch_observation(req(), date(2024, 5, 12), "single")
+
+
+def test_timeout_terminates_worker(monkeypatch):
+    class Process:
+        returncode = None
+        killed = False
+
+        async def communicate(self, payload):
+            await asyncio.sleep(60)
+
+        def kill(self):
+            self.killed = True
+            self.returncode = -9
+
+        async def wait(self):
+            return self.returncode
+
+    process = Process()
+
+    async def create(*args, **kwargs):
+        return process
+
+    monkeypatch.setattr(main.asyncio, "create_subprocess_exec", create)
+    monkeypatch.setattr(main, "DEADLINE", 0.01)
+
+    async def exercise():
+        async with main.lifespan(main.app):
+            with main.db() as con:
+                con.execute(
+                    "INSERT INTO jobs VALUES (?,?,?,?,?,?)",
+                    ("deadline", "queued", 0, "{}", None, ""),
+                )
+            await main.execute("deadline", "{}")
+            with main.db() as con:
+                assert (
+                    con.execute(
+                        "SELECT status FROM jobs WHERE id=?", ("deadline",)
+                    ).fetchone()[0]
+                    == "failed"
+                )
+
+    asyncio.run(exercise())
+    assert process.killed

@@ -1,7 +1,22 @@
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
-
-// https://vite.dev/config/
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 export default defineConfig({
-  plugins: [react()],
-})
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        ...["Workers", "Assets", "Widgets", "ThirdParty"].map((name) => ({
+          src: `node_modules/cesium/Build/Cesium/${name}`,
+          dest: "cesium",
+        })),
+        {
+          src: "node_modules/@mediapipe/tasks-vision/wasm/*",
+          dest: "mediapipe",
+        },
+      ],
+    }),
+  ],
+  define: { CESIUM_BASE_URL: JSON.stringify("/cesium/") },
+  build: { chunkSizeWarningLimit: 1500 },
+});

@@ -1,3 +1,5 @@
+> Historical prototype document. For current capabilities, setup, and limitations, see [README.md](README.md) and [docs/ROADMAP.md](docs/ROADMAP.md).
+
 # SatQuery: Humanized 2.5–3 Minute Live Demo Video Script
 
 **Target Duration**: 2 Minutes 30 Seconds – 2 Minutes 45 Seconds  
