@@ -362,3 +362,5 @@ footer {
 .table-scroll { overflow-x: auto; }
 .crop-page table { width: 100%; border-collapse: collapse; }
 .crop-page th, .crop-page td { padding: 12px; border-bottom: 1px solid #36556a; text-align: left; }
+.crop-switch { display: flex; gap: 12px; flex-wrap: wrap; padding-bottom: 0; }
+.crop-switch button[aria-pressed="true"] { background: #84e5cf; color: #08151e; }
