@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, cleanup, waitFor, act } from "@testing-library/react";
-import CropOutlook from "../components/CropOutlook";
+import CropOutlook from "../components/CropResearch";
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../api/query", () => ({ request }));
 afterEach(() => { cleanup(); request.mockReset(); });

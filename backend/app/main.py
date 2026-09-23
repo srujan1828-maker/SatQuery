@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from app.models import QueryRequest
 from app.crops import router as crop_router
+from app.crop_auto import AutoCropRequest
 from app.imagery import DATA_DIR, ARTIFACTS, prune_artifacts
 from app.services import geocode_search
 
@@ -148,7 +149,7 @@ async def health():
 
 
 @app.post("/api/jobs", status_code=202)
-async def submit(body: QueryRequest, request: Request):
+async def submit(body: QueryRequest | AutoCropRequest, request: Request):
     # IP budget is an abuse backstop, not account authentication. Deploy behind a trusted proxy.
     await asyncio.to_thread(prune_artifacts)
     client = request.client.host if request.client else "unknown"

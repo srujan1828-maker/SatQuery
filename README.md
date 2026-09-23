@@ -67,4 +67,4 @@ Evidence artifacts expire after seven days or under the 1 GiB cache cap. Export 
 - `/optical-radar`: optical and radar evidence comparison.
 - `/crop-outlook`: experimental district crop model evaluation from uploaded measured records, with chronological holdouts and conditional yield/production estimates.
 
-Crop Outlook requires actual historical yields and calibrated radar/optical/weather features. It includes no preloaded crop model or automatic crop-data ingestion. See [crop data requirements and evaluation](docs/CROP_OUTLOOK.md).
+Crop Outlook defaults to automatic regional satellite/weather retrieval with optional configured official yield history. Advanced model evaluation accepts curated historical records. No validated automatic yield model is bundled. See [crop data requirements and evaluation](docs/CROP_OUTLOOK.md).

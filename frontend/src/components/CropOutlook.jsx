@@ -1,115 +1,102 @@
-import { useEffect, useRef, useState } from "react";
-import { request } from "../api/query";
-const fields = [
-  ["vv_early_db", "Early-window VV (dB)", -60, 20], ["vh_early_db", "Early-window VH (dB)", -60, 20],
-  ["vv_late_db", "Late-window VV (dB)", -60, 20], ["vh_late_db", "Late-window VH (dB)", -60, 20],
-  ["ndvi_mean", "Mean NDVI", -1, 1], ["rain_mm", "Rainfall to cutoff (mm)", 0, 5000],
-  ["temperature_c", "Mean temperature (°C)", -30, 60],
-];
-function download(name, value) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }));
-  const a = document.createElement("a"); a.href = url; a.download = name; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { fetchGeocodeSuggestions, submitQuery } from "../api/query";
+const Research = lazy(() => import("./CropResearch"));
+const number = value => value == null ? "Unavailable" : Number(value).toFixed(2);
 export default function CropOutlook() {
-  const [rows, setRows] = useState(null);
-  const [filename, setFilename] = useState("");
-  const [result, setResult] = useState(null);
+  const [research, setResearch] = useState(false);
+  const [search, setSearch] = useState("");
+  const [matches, setMatches] = useState([]);
+  const [area, setArea] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const controller = useRef();
-  const revision = useRef(0);
-  const fileRevision = useRef(0);
-  const clear = () => { revision.current++; controller.current?.abort(); setBusy(false); setResult(null); setError(""); };
-  useEffect(() => () => { revision.current++; fileRevision.current++; controller.current?.abort(); }, []);
-  const upload = async e => {
-    clear();
-    const version = ++fileRevision.current;
-    const file = e.target.files?.[0];
-    setRows(null); setFilename("");
-    if (!file) return;
+  const [searching, setSearching] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [result, setResult] = useState(null);
+  const runAbort = useRef();
+  const searchAbort = useRef();
+  const version = useRef(0);
+  const invalidate = () => { version.current++; runAbort.current?.abort(); setBusy(false); setResult(null); setError(""); };
+  useEffect(() => () => { version.current++; runAbort.current?.abort(); searchAbort.current?.abort(); }, []);
+  const locate = async () => {
+    searchAbort.current?.abort(); const c = new AbortController(); searchAbort.current = c;
+    setSearching(true); setError("");
     try {
-      if (file.size > 2_000_000) throw new Error("Upload a JSON file under 2 MB.");
-      const data = JSON.parse(await file.text());
-      if (version !== fileRevision.current) return;
-      if (!Array.isArray(data) || data.length < 40 || data.length > 2000) throw new Error("Supply an array of 40–2,000 historical district-season records.");
-      setRows(data); setFilename(file.name);
-    } catch (e) { if (version === fileRevision.current) setError(e.message); }
+      const found = await fetchGeocodeSuggestions(search, c.signal);
+      if (!c.signal.aborted) { setMatches(found); if (!found.length) setError("No matching region. Try a nearby town or coordinates."); }
+    } catch (e) { if (!c.signal.aborted) setError(e.message); }
+    finally { if (!c.signal.aborted) setSearching(false); }
   };
   const submit = async event => {
-    event.preventDefault(); clear();
-    if (!rows) { setError("Upload historical measurements and actual yields first."); return; }
+    event.preventDefault(); invalidate();
+    if (!area) { setError("Search for and select a location first."); return; }
     const f = new FormData(event.currentTarget);
-    const target = { district: f.get("district"), year: Number(f.get("year")) };
-    fields.forEach(([key]) => { target[key] = Number(f.get(key)); });
-    if (f.get("area")) target.harvested_area_ha = Number(f.get("area"));
-    const body = {
-      crop: f.get("crop"), season: f.get("season"), region: f.get("region"), forecast_day: Number(f.get("forecast_day")),
-      radar_processing: "calibrated_rtc_db", observation_source: f.get("observation_source"),
-      yield_source: f.get("yield_source"), protocol: f.get("protocol"), historical: rows, target,
-    };
-    const id = revision.current;
-    const c = new AbortController(); controller.current = c; setBusy(true);
-    const timeout = setTimeout(() => c.abort(), 30000);
+    const body = { mode: "crop_auto", location: { lat: area.lat, lon: area.lon, name: area.name },
+      crop: f.get("crop"), sowing_date: f.get("sowing_date"), date: f.get("date"), radius_km: Number(f.get("radius")),
+      history_years: Number(f.get("history")), state: f.get("state"), district: f.get("district"), season: f.get("season") };
+    const id = version.current; const c = new AbortController(); runAbort.current = c; setBusy(true); setProgress("Queued for automatic retrieval…");
     try {
-      const data = await request("/api/crops/evaluate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: c.signal });
-      if (revision.current === id) setResult(data);
-    } catch (e) {
-      if (revision.current === id) setError(e.name === "AbortError" ? "Request timed out or was cancelled. Retry when the backend is ready." : e.message);
-    } finally { clearTimeout(timeout); if (revision.current === id) setBusy(false); }
+      const data = await submitQuery(body, c.signal, message => { if (id === version.current) setProgress(message); });
+      if (id === version.current) setResult(data);
+    } catch (e) { if (id === version.current && e.name !== "AbortError") setError(e.message); }
+    finally { if (id === version.current) setBusy(false); }
   };
-  const fmt = n => n == null ? "Unavailable" : Number(n).toFixed(2);
-  return <main className="shell crop-page">
-    <header><div className="eyebrow">SATQUERY / AGRICULTURE</div><h1>Crop Outlook</h1>
-      <p>Evaluate historical radar, vegetation and weather measurements against actual district yields, then estimate a later season.</p></header>
-    <section className="card"><h2>Start with measured data</h2>
-      <p>This research workflow trains a small regression model from your dataset. No pretrained crop model or automatic calibrated radar extraction is connected. Existing radar display images cannot be used as measurements.</p>
-      <p>Use one crop and season, at least five years, at least five districts per year, and 40 records overall. All measurements must stop at the same number of days after sowing. District records cannot establish farm-level yield.</p>
-      <a href="https://data.desagri.gov.in/website/apy-query-report-web" target="_blank" rel="noreferrer">Find official Indian area, production and yield records</a>
-      <details><summary>Dataset format and measurement requirements</summary>
-        <p>Upload a JSON array. Each record needs district, year, yield_t_ha and the seven measurements below. Use calibrated terrain-corrected VV/VH in dB, crop-masked area statistics, consistent radar orbit handling and identical early/late growth windows. NDVI and weather must use only data available by the forecast cutoff.</p>
-        <pre>{JSON.stringify({ district: "DISTRICT_NAME", year: "YEAR", yield_t_ha: "MEASURED_TONNES_PER_HECTARE", ...Object.fromEntries(fields.map(([key]) => [key, "MEASURED_NUMBER"])) }, null, 2)}</pre>
-        <button type="button" onClick={() => download("crop-record-template.json", [{ district: "", year: null, yield_t_ha: null, ...Object.fromEntries(fields.map(([key]) => [key, null])) }])}>Download blank record template</button>
-        <p>The template contains no sample yields. Replace placeholders with real measurements and add historical records.</p>
-      </details>
-    </section>
-    <form className="card crop-form" onSubmit={submit} onChange={clear}>
-      <h2>1. Historical dataset</h2>
-      <label>Historical records (.json)<input type="file" accept=".json,application/json" onChange={upload} /></label>
-      {rows && <p>{filename}: {rows.length} records loaded. They will be sent to the backend for evaluation, without permanent storage.</p>}
-      <div className="crop-grid">
-        <label>Crop<select name="crop"><option value="rice">Rice</option><option value="wheat">Wheat</option><option value="maize">Maize</option></select></label>
-        <label>Season<input name="season" required maxLength={60} placeholder="e.g. Kharif" /></label>
-        <label>Region<input name="region" required maxLength={120} placeholder="e.g. Punjab" /></label>
-        <label>Forecast cutoff (days after sowing)<input name="forecast_day" type="number" min="30" max="180" required /></label>
-      </div>
-      <label>Observation source and processing version<textarea name="observation_source" minLength={10} maxLength={2000} required placeholder="Catalog/product, scene references or dataset identifier, preprocessing version" /></label>
-      <label>Actual yield source<textarea name="yield_source" minLength={10} maxLength={2000} required placeholder="Dataset URL or documented harvest records and units" /></label>
-      <label>Measurement protocol<textarea name="protocol" minLength={20} maxLength={4000} required placeholder="Crop mask, radar orbit, early/late day windows, rainfall/temperature source, aggregation, missing-data handling" /></label>
-      <h2>2. Target season measurements</h2>
-      <div className="crop-grid">
-        <label>District<input name="district" maxLength={100} required /></label>
-        <label>Target year<input name="year" type="number" min="2015" max={new Date().getFullYear()} required /></label>
-        <label>Expected harvested area (ha, optional)<input name="area" type="number" step="any" min="0.001" max="10000000" /></label>
-        {fields.map(([key, label, min, max]) => <label key={key}>{label}<input name={key} type="number" min={min} max={max} step="any" required /></label>)}
-      </div>
-      <label className="crop-confirm"><input type="checkbox" required /> I used actual yield records, crop-masked calibrated radar measurements and only observations available by the stated cutoff.</label>
-      <button className="primary" disabled={busy || !rows}>{busy ? "Evaluating seasons…" : "Evaluate model and estimate yield"}</button>
-      {busy && <button type="button" onClick={clear}>Cancel</button>}
-    </form>
-    {error && <p role="alert">{error}</p>}
-    {result && <section className="card" aria-label="Crop evaluation results">
-      <h2>{result.status === "withheld" ? "Forecast withheld" : "Experimental yield estimate"}</h2>
-      <p>{result.crop} · {result.district} · {result.year} · day {result.forecast_day} after sowing</p>
-      {result.withheld_reasons.map(reason => <p key={reason} role="alert">{reason}</p>)}
-      {result.yield_t_ha != null && <><p className="crop-yield">{fmt(result.yield_t_ha)} <small>tonnes / hectare</small></p>
-        <p>Historical-error band: {result.residual_band_t_ha.map(fmt).join("–")} t/ha. This is not a calibrated confidence interval.</p>
-        {result.production_t != null && <p>Estimated production: {fmt(result.production_t)} tonnes, conditional on your harvested-area estimate.</p>}</>}
-      <p>Held-out MAE: {fmt(result.mae_t_ha)} t/ha. Historical-average baseline MAE: {fmt(result.baseline_mae_t_ha)} t/ha.</p>
-      <div className="table-scroll"><table><caption>Unseen-year evaluation</caption><thead><tr><th>Test year</th><th>Training rows</th><th>Test rows</th><th>Model MAE (t/ha)</th><th>Baseline MAE (t/ha)</th></tr></thead>
-        <tbody>{result.validation_folds.map(f => <tr key={f.test_year}><td>{f.test_year}</td><td>{f.n_train}</td><td>{f.n_test}</td><td>{fmt(f.mae_t_ha)}</td><td>{fmt(f.baseline_mae_t_ha)}</td></tr>)}</tbody></table></div>
-      <ul>{result.warnings.map(w => <li key={w}>{w}</li>)}</ul>
-      <button onClick={() => download("crop-outlook-evaluation.json", result)}>Export evaluation and provenance</button>
-    </section>}
-  </main>;
+  const exportResult = () => {
+    const u = URL.createObjectURL(new Blob([JSON.stringify(result, null, 2)], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = u; a.download = "crop-context.json"; a.click();
+    setTimeout(() => URL.revokeObjectURL(u), 1000);
+  };
+  return <>
+    <div className="shell crop-switch"><button aria-pressed={!research} onClick={() => { invalidate(); setResearch(false); }}>Automatic retrieval</button>
+      <button aria-pressed={research} onClick={() => { invalidate(); searchAbort.current?.abort(); setSearching(false); setResearch(true); }}>Advanced research dataset</button></div>
+    {research ? <Suspense fallback={<p>Loading research tools…</p>}><Research /></Suspense> : <main className="shell crop-page">
+      <header><div className="eyebrow">SATQUERY / AGRICULTURE</div><h1>Crop Outlook</h1>
+        <p>Choose your region, crop and season dates. SatQuery retrieves available satellite observations, weather and configured historical yield records for you.</p></header>
+      <section className="card"><h2>Choose a location</h2>
+        <div className="crop-grid"><label>Region or coordinates<input value={search} onChange={e => { searchAbort.current?.abort(); setSearching(false); invalidate(); setSearch(e.target.value); setArea(null); setMatches([]); }} placeholder="Town, district, or latitude, longitude" /></label>
+          <button onClick={locate} disabled={searching || search.trim().length < 2}>{searching ? "Searching…" : "Find region"}</button></div>
+        <div className="search-results">{matches.map((m, i) => <button key={i} onClick={() => { invalidate(); setArea(m); setMatches([]); }}>{m.name}</button>)}</div>
+        {area && <p>Selected: {area.name} ({area.lat.toFixed(4)}, {area.lon.toFixed(4)}). Retrieval covers the radius below around this point, not the entire administrative district.</p>}
+      </section>
+      <form className="card crop-form" onSubmit={submit} onChange={invalidate}>
+        <h2>Basic crop details</h2><div className="crop-grid">
+          <label>Crop<select name="crop"><option value="rice">Rice</option><option value="wheat">Wheat</option><option value="maize">Maize</option></select></label>
+          <label>Sowing date<input type="date" name="sowing_date" min="2015-01-01" max={new Date().toISOString().slice(0,10)} required /></label>
+          <label>Observation cutoff<input type="date" name="date" min="2015-01-01" max={new Date().toISOString().slice(0,10)} required /></label>
+          <label>Area radius (km)<input type="number" name="radius" min="0.25" max="5" step="0.25" defaultValue="1" required /></label>
+          <label>Past seasons to compare<select name="history" defaultValue="1"><option value="0">Current season only</option><option value="1">Previous season</option><option value="2">Previous two seasons</option></select></label>
+        </div>
+        <p>Choose a cutoff 30–180 days after sowing. Earlier years use the same calendar window as a comparison assumption.</p>
+        <details><summary>Optional Indian yield-record matching</summary><div className="crop-grid">
+          <label>State<input name="state" maxLength={100} placeholder="e.g. Punjab" /></label>
+          <label>District<input name="district" maxLength={100} placeholder="Official district name" /></label>
+          <label>Season<input name="season" maxLength={60} placeholder="e.g. Kharif" /></label>
+        </div><p>Matching depends on the server's official yield-data connection and dataset coverage. No file upload is needed.</p></details>
+        <button className="primary" disabled={busy || !area}>{busy ? "Retrieving data…" : "Retrieve crop data"}</button>
+        {busy && <><p role="status">{progress} Satellite reads can take several minutes.</p><button type="button" onClick={invalidate}>Cancel retrieval</button></>}
+      </form>
+      {error && <p role="alert">{error}</p>}
+      {result && <>
+        <section className="card"><h2>Retrieved crop context</h2><p>{result.status === "context_ready" ? "Satellite and weather context retrieved." : "Partial results: some sources or observations were unavailable."} {result.cached ? "Using cached observations." : "Fresh retrieval."}</p>
+          <p><strong>Yield forecast unavailable for this area.</strong> A validated model and matched crop-specific training data are still required.</p>
+          <ul>{result.forecast.reasons.map(r => <li key={r}>{r}</li>)}</ul>
+          <button onClick={exportResult}>Export retrieved data and sources</button></section>
+        {result.seasons.map(s => <section className="card" key={s.year}><h2>{s.year} season</h2><p>{s.start} to {s.end}</p>
+          <h3>Weather · {s.weather.status}</h3>
+          {s.weather.expected_days ? <><p>Rainfall: {number(s.weather.rain_mm)} mm. Mean temperature: {number(s.weather.temperature_c)} °C.</p>
+            <p>Coverage: rain {s.weather.rain_days}/{s.weather.expected_days} days; temperature {s.weather.temperature_days}/{s.weather.expected_days} days.</p>
+            {s.weather.rain_mm == null && <p>Available-day rainfall subtotal: {number(s.weather.available_rain_mm)} mm. Missing days prevent a seasonal total.</p>}
+            <a href={s.weather.source} target="_blank" rel="noreferrer">NASA POWER source</a></> : <p>{s.weather.message}</p>}
+          {["optical", "radar"].map(key => <div key={key}><h3>{key === "optical" ? "Vegetation observations" : "Radar observations"} · {s[key].status}</h3>
+            <p>{s[key].message || s[key].note}</p>
+            {s[key].search_truncated && <p>Catalog results were truncated. This is not an exhaustive search.</p>}
+            <ul>{s[key].observations?.map(o => <li key={o.scene_id}><a href={o.source} target="_blank" rel="noreferrer">{o.date} · {o.window}</a>: {key === "optical" ? `NDVI ${number(o.ndvi)}` : `VV ${number(o.vv_db)} dB, VH ${number(o.vh_db)} dB; orbit ${o.orbit}`}. Usable pixels: {Math.round(o.usable_fraction*100)}%.<br />{o.measurement}</li>)}</ul>
+          </div>)}
+        </section>)}
+        <section className="card"><h2>Historical district yields · {result.yield_history.status}</h2><p>{result.yield_history.message}</p>
+          {!!result.yield_history.records?.length && <div className="table-scroll"><table><thead><tr><th>Year</th><th>Area (ha)</th><th>Production (t)</th><th>Yield (t/ha)</th></tr></thead><tbody>{result.yield_history.records.map(r => <tr key={r.year}><td>{r.year}</td><td>{number(r.area_ha)}</td><td>{number(r.production_t)}</td><td>{number(r.yield_t_ha)}</td></tr>)}</tbody></table></div>}
+          {result.yield_history.source && <a href={result.yield_history.source}>Official data source</a>}
+          <ul>{result.warnings.map(w => <li key={w}>{w}</li>)}</ul></section>
+      </>}
+    </main>}
+  </>;
 }
