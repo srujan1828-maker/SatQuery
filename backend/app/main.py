@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from app.models import QueryRequest
+from app.crops import router as crop_router
 from app.imagery import DATA_DIR, ARTIFACTS, prune_artifacts
 from app.services import geocode_search
 
@@ -54,6 +55,7 @@ async def lifespan(app):
 
 
 app = FastAPI(title="SatQuery Evidence API", version="0.2.0", lifespan=lifespan)
+app.include_router(crop_router)
 def frontend_origins(value):
     origins = []
     for entry in value.split(","):

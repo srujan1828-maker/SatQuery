@@ -15,7 +15,7 @@ const older = () => {
   d.setDate(d.getDate() - 90);
   return iso(d);
 };
-function initial() {
+function initial(mode = "vqa") {
   const p = new URLSearchParams(location.search);
   const coord = (key, fallback, min, max) => {
     const raw = p.get(key);
@@ -24,7 +24,7 @@ function initial() {
   };
   return {
     query: "Describe visible water and land features, and explain limitations.",
-    mode: "vqa",
+    mode,
     language: "en",
     location: {
       lat: coord("lat", 28.6139, -80, 80),
@@ -52,8 +52,8 @@ function download(name, data, type) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export default function App() {
-  const [form, setForm] = useState(initial),
+export default function App({ mode = "vqa", title = "Ask Satellite" }) {
+  const [form, setForm] = useState(() => initial(mode)),
     [result, setResult] = useState(null),
     [loading, setLoading] = useState(false),
     [progress, setProgress] = useState(""),
@@ -175,11 +175,7 @@ export default function App() {
     <main className="shell">
       <header>
         <div className="eyebrow">SATQUERY / EARTH OBSERVATION</div>
-        <h1>
-          See the evidence.
-          <br />
-          <span>Understand the change.</span>
-        </h1>
+        <h1>{title}</h1>
         <p>
           Explore dated satellite observations, compare areas and keep a
           traceable record of every result.
@@ -189,17 +185,6 @@ export default function App() {
         <section className="card controls">
           <h2>Analysis workspace</h2>
           <form onSubmit={run}>
-            <label>
-              Task
-              <select
-                value={form.mode}
-                onChange={(e) => change({ mode: e.target.value })}
-              >
-                <option value="vqa">Ask about an observation</option>
-                <option value="change_detection">Water-change screening</option>
-                <option value="fusion">Optical / radar comparison</option>
-              </select>
-            </label>
             <label>
               Question
               <textarea
@@ -530,7 +515,7 @@ export default function App() {
             important evidence.
           </p>
           <div className="actions">
-            {runs.map((r) => (
+            {runs.filter(r => r.request.mode === mode).map((r) => (
               <button
                 key={r.run_id}
                 onClick={() => {
