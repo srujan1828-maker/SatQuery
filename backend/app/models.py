@@ -33,6 +33,7 @@ class QueryRequest(BaseModel):
     mode: Mode = "vqa"
     radius_km: float = Field(default=2.5, ge=0.25, le=5, allow_inf_nan=False)
     tolerance_days: int = Field(default=10, ge=0, le=30)
+    optical_views: bool = False
 
     @model_validator(mode="after")
     def valid(self):
@@ -56,6 +57,15 @@ class QueryRequest(BaseModel):
         return self
 
 
+class OpticalView(BaseModel):
+    kind: Literal["false_colour", "ndvi", "scene_classes"]
+    url: str
+    sha256: str
+    label: str
+    method: str
+    legend: list[str] = Field(default_factory=list)
+
+
 class ImageResult(BaseModel):
     id: str
     url: str
@@ -74,6 +84,8 @@ class ImageResult(BaseModel):
     resolution_m: float
     sha256: str
     usable_fraction: float
+    views: list[OpticalView] = Field(default_factory=list)
+    view_warnings: list[str] = Field(default_factory=list)
     render_method: str
 
 

@@ -348,3 +348,18 @@ def test_frontend_origins_and_jobs_preflight():
         assert client.options("/api/jobs", headers={"Origin": "https://untrusted.example", "Access-Control-Request-Method": "POST"}).status_code == 400
     with pytest.raises(ValueError):
         main.frontend_origins("https://*.vercel.app")
+
+
+def test_nonwater_comparison_answers_question_without_water_screening(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-only")
+    monkeypatch.setattr(pipeline, "fetch_observation", lambda r, d, role: obs(r, d, role))
+    def no_water(*args): pytest.fail("Water measurements must not replace a vegetation question")
+    monkeypatch.setattr(pipeline, "water_change", no_water)
+    async def answer(prompt, *args, **kwargs):
+        assert "vegetation" in prompt and "BEFORE" in prompt
+        assert kwargs["comparison_image_data"] is not None
+        return "Vegetation comparison", [], False
+    monkeypatch.setattr(pipeline, "gemini_answer", answer)
+    result = asyncio.run(pipeline.handle_query(req(query="Compare vegetation and urban growth", mode="change_detection", date_range={"start":"2023-05-12", "end":"2024-05-12"})))
+    assert result.answer_text == "Vegetation comparison"
+    assert result.metrics is None

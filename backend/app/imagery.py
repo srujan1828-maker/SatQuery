@@ -186,6 +186,9 @@ def _fetch_observation(request: QueryRequest, target: date, role: str, radar=Fal
                 usable_fraction=fraction,
                 render_method=method,
             )
+            if not radar and request.optical_views:
+                from app.optical_views import build_views
+                meta.views, meta.view_warnings = build_views(item, transform, size, scl, valid)
             return Observation(meta, content, valid, water, transform)
         except (
             httpx.HTTPError,
@@ -281,7 +284,8 @@ def fetch_observation(request: QueryRequest, target: date, role: str, radar=Fals
     key = sha256(
         json.dumps(
             {
-                "version": "aoi-v1",
+                "version": "aoi-views-v2",
+                "optical_views": request.optical_views,
                 "lat": request.location.lat,
                 "lon": request.location.lon,
                 "radius": request.radius_km,
@@ -300,6 +304,8 @@ def fetch_observation(request: QueryRequest, target: date, role: str, radar=Fals
                 meta = meta.model_copy(
                     update={"role": role, "id": f"{role}_{meta.sha256[:12]}"}
                 )
+                if any(not (ARTIFACTS / f"{view.sha256}.png").exists() for view in meta.views):
+                    raise ValueError("Cached optical view expired")
                 content = (ARTIFACTS / f"{meta.sha256}.png").read_bytes()
                 if sha256(content).hexdigest() != meta.sha256:
                     raise ValueError("Invalid cached artifact")

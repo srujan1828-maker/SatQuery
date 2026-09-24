@@ -122,7 +122,7 @@ def select_scenes(items, start, end, radar=False, candidates_per_window=1):
     return selected
 
 
-def parse_boa_metadata(content, baseline):
+def parse_boa_metadata(content, baseline, bands=("B04", "B08")):
     root = ET.fromstring(content)
     values = {node.tag.split("}")[-1]: node.text for node in root.iter()}
     quant = float(values["BOA_QUANTIFICATION_VALUE"])
@@ -131,7 +131,8 @@ def parse_boa_metadata(content, baseline):
     offsets = {node.attrib.get("band_id"): float(node.text) for node in root.iter()
                if node.tag.split("}")[-1] == "BOA_ADD_OFFSET"}
     result = {}
-    for band, index in [("B04", "3"), ("B08", "7")]:
+    for band in bands:
+        index = {"B03": "2", "B04": "3", "B08": "7"}[band]
         if index not in offsets and float(baseline) >= 4:
             raise ValueError("Missing modern-baseline BOA offset")
         offset = offsets.get(index, 0.0)/quant
@@ -141,8 +142,8 @@ def parse_boa_metadata(content, baseline):
     return result
 
 
-def reflectance_calibration(item):
-    result = {band: item["assets"][band].get("raster:bands", [{}])[0] for band in ["B04", "B08"]}
+def reflectance_calibration(item, bands=("B04", "B08")):
+    result = {band: item["assets"][band].get("raster:bands", [{}])[0] for band in bands}
     if all("scale" in meta and "offset" in meta for meta in result.values()):
         return result
     # PC items may omit raster:bands. Read the original product's BOA offsets
@@ -156,7 +157,7 @@ def reflectance_calibration(item):
                 content.extend(chunk)
                 if len(content) > 2_000_000:
                     raise ValueError("Product metadata exceeds limit")
-    return parse_boa_metadata(content, item["properties"]["s2:processing_baseline"])
+    return parse_boa_metadata(content, item["properties"]["s2:processing_baseline"], bands)
 
 
 def optical_values(item, transform, size):
