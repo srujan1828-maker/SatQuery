@@ -16,7 +16,7 @@ from app.models import Location, QueryRequest
 from app.imagery import STAC, DATA_DIR, aoi_grid, read_asset
 
 POWER = "https://power.larc.nasa.gov/api/temporal/daily/point"
-VERSION = "crop-auto-context-v1"
+VERSION = "crop-auto-context-v2"
 
 
 class AutoCropRequest(BaseModel):
@@ -96,7 +96,7 @@ def catalog(bbox, start, end, collection):
     return items, any(link.get("rel") == "next" for link in data.get("links", []))
 
 
-def select_scenes(items, start, end, radar=False):
+def select_scenes(items, start, end, radar=False, candidates_per_window=1):
     usable = []
     for item in items:
         try:
@@ -118,7 +118,7 @@ def select_scenes(items, start, end, radar=False):
         if candidates:
             target = lo+(hi-lo)//2
             candidates.sort(key=lambda x: (0 if radar else x[1]["properties"].get("eo:cloud_cover", 100), abs((x[0]-target).days)))
-            selected.append((window, candidates[0][1]))
+            selected.extend((window, item) for _, item in candidates[:candidates_per_window])
     return selected
 
 
@@ -202,9 +202,11 @@ def satellite_series(request, start, end, radar, stop_at):
     from rasterio.transform import from_bounds
     transform = from_bounds(*bbox, size, size)
     items, truncated = catalog(bbox, start, end, collection)
-    selected = select_scenes(items, start, end, radar)
+    selected = select_scenes(items, start, end, radar, candidates_per_window=3)
     observations, failed = [], 0
     for window, item in selected:
+        if any(o["window"] == window for o in observations):
+            continue
         if time.monotonic() > stop_at:
             failed += 1
             continue
@@ -218,8 +220,8 @@ def satellite_series(request, start, end, radar, stop_at):
             failed += 1
     return {"status": "complete" if len(observations) == 2 and not truncated else "partial" if observations else "unavailable",
             "collection": collection, "observations": observations, "candidate_count": len(items), "search_truncated": truncated,
-            "failed_reads": failed, "sampling": "At most one scene in each half of the season, resampled to a grid no larger than 128x128.",
-            "note": "RTC access may require a Planetary Computer subscription; check server access if reads fail." if radar else "Clouds or missing reflectance metadata can prevent NDVI extraction."}
+            "failed_reads": failed, "sampling": "At most one successful scene per half-season, trying up to three candidates per window within the retrieval budget; grid no larger than 128x128.",
+            "note": ("Public Sentinel-1 RTC observations retrieved." if observations else "Public RTC retrieval failed or had no coverage; check provider access and dates.") if radar else "Clouds or missing reflectance metadata can prevent NDVI extraction even after alternate-scene attempts."}
 
 
 def norm(value):
@@ -228,8 +230,11 @@ def norm(value):
 
 def yield_history(request):
     key, resource = os.getenv("OGD_API_KEY"), os.getenv("OGD_CROP_RESOURCE_ID", "")
-    if not key or not re.fullmatch(r"[a-fA-F0-9-]{36}", resource):
-        return {"status": "not_configured", "records": [], "message": "Historical yield provider needs one-time server configuration (OGD API key and verified resource). No user upload is required."}
+    if not key or key.strip().lower() in {"your_key", "your_api_key", "your-key"}:
+        return {"status": "not_configured", "records": [], "message": "Add your actual OGD_API_KEY to Render. Example placeholders such as your_key are not credentials. No user upload is required."}
+    if not re.fullmatch(r"[a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}", resource):
+        return {"status": "resource_needed", "records": [], "message": "OGD key is configured, but a verified OGD_CROP_RESOURCE_ID is still needed. Choose a district/season/crop area-and-production resource from the official catalogue; an API key does not identify a dataset.",
+                "source": "https://www.data.gov.in/catalog/district-wise-season-wise-crop-production-statistics-0"}
     if not all([request.state.strip(), request.district.strip(), request.season.strip()]):
         return {"status": "details_needed", "records": [], "message": "Add Indian state, district and season to match official crop records."}
     # Operator must verify this resource reports area in hectares and production in tonnes.
@@ -243,7 +248,14 @@ def yield_history(request):
     for k, value in [("state_name", request.state), ("district_name", request.district), ("crop", request.crop), ("season", request.season)]:
         params[f"filters[{fields[k]}]"] = value.strip()
     url = f"https://api.data.gov.in/resource/{resource}"
-    data = get_json(url, params=params)
+    try:
+        data = get_json(url, params=params)
+    except httpx.HTTPStatusError as error:
+        code = error.response.status_code
+        message = "OGD rejected the configured API key. Check it in Render." if code in (401, 403) else "OGD resource was not found. Check OGD_CROP_RESOURCE_ID." if code == 404 else "OGD is temporarily unavailable or rate limited. Retry later."
+        return {"status": "unavailable", "records": [], "message": message}
+    if not isinstance(data.get("records"), list):
+        return {"status": "unavailable", "records": [], "message": "OGD returned no usable record list. Check the configured key and resource."}
     records = []
     for row in data.get("records", []):
         try:

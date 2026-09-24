@@ -23,7 +23,7 @@ function initial(mode = "vqa") {
     return Number.isFinite(n) && n >= min && n <= max ? n : fallback;
   };
   return {
-    query: "Describe visible water and land features, and explain limitations.",
+    query: p.get("q")?.slice(0, 2000) || "Describe visible water and land features, and explain limitations.",
     mode,
     language: "en",
     location: {
@@ -172,7 +172,7 @@ export default function App({ mode = "vqa", title = "Ask Satellite" }) {
       "text/markdown",
     );
   return (
-    <main className="shell">
+    <main id="main-content" className="shell">
       <header>
         <div className="eyebrow">SATQUERY / EARTH OBSERVATION</div>
         <h1>{title}</h1>
