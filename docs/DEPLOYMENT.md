@@ -40,3 +40,9 @@ The frontend build verifies Cesium textures/workers and MediaPipe WASM at their 
 ## OPTIONS /api/jobs returns 400
 
 Set Render's `FRONTEND_URL` to `https://sat-query-six.vercel.app` (or the exact frontend origin shown in your browser). For multiple deployments, provide a comma-separated list of their exact origins. Existing environment values override code defaults: a value containing only localhost must be updated in Render. Redeploy the backend after changing it. Preview deployment hostnames must be added explicitly; all Vercel sites are not trusted. Paths, queries and trailing slashes in configured URLs are normalized to browser origins. CORS permits POST/DELETE and Content-Type preflights; the request's Origin, requested method and requested headers determine whether it is accepted.
+
+## Region search blocked by browser CORS
+
+The live Render geocode endpoint returned HTTP 200 with results but no Access-Control-Allow-Origin for the production frontend. Both root and frontend Vercel configs now proxy `/api/*` and `/media/*` to `https://satquery.onrender.com` before the SPA fallback. The browser uses same-origin requests when VITE_API_BASE_URL is empty or equals that known Render URL. This works for preview origins too, without trusting all Vercel sites in backend CORS.
+
+Redeploy Vercel to activate rewrites and rebuild the frontend. Leave VITE_API_BASE_URL empty for this setup. If your backend host changes, update both rewrite destinations; a custom VITE_API_BASE_URL continues to use direct requests and requires matching CORS. Local development defaults to local FastAPI. Raw latitude/longitude searches resolve in the browser and do not require a geocoding request. The backend is still required to run analysis.

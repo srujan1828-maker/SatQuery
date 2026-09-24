@@ -54,7 +54,7 @@ export default function CropOutlook() {
       <section className="card"><h2>Choose a location</h2>
         <div className="crop-grid"><label>Region or coordinates<input value={search} onChange={e => { searchAbort.current?.abort(); setSearching(false); invalidate(); setSearch(e.target.value); setArea(null); setMatches([]); }} placeholder="Town, district, or latitude, longitude" /></label>
           <button onClick={locate} disabled={searching || search.trim().length < 2}>{searching ? "Searching…" : "Find region"}</button></div>
-        <div className="search-results">{matches.map((m, i) => <button key={i} onClick={() => { invalidate(); setArea(m); setMatches([]); }}>{m.name}</button>)}</div>
+        <div className="search-results">{matches.map((m, i) => <button key={i} onClick={() => { invalidate(); setArea(m); setMatches([]); }}>{m.display_name || m.name}</button>)}</div>
         {area && <p>Selected: {area.name} ({area.lat.toFixed(4)}, {area.lon.toFixed(4)}). Retrieval covers the radius below around this point, not the entire administrative district.</p>}
       </section>
       <form className="card crop-form" onSubmit={submit} onChange={invalidate}>
