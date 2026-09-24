@@ -363,3 +363,23 @@ def test_nonwater_comparison_answers_question_without_water_screening(monkeypatc
     result = asyncio.run(pipeline.handle_query(req(query="Compare vegetation and urban growth", mode="change_detection", date_range={"start":"2023-05-12", "end":"2024-05-12"})))
     assert result.answer_text == "Vegetation comparison"
     assert result.metrics is None
+
+
+def test_no_candidate_message_is_distinct(monkeypatch):
+    monkeypatch.setattr(imagery, "catalog_candidates", lambda *args: [])
+    with pytest.raises(EvidenceUnavailable, match="catalogue returned no scenes"):
+        imagery._fetch_observation(req(), req().date, "single")
+
+
+def test_rejected_coverage_is_counted_and_search_reaches_sixth_date(monkeypatch, tmp_path):
+    monkeypatch.setattr(imagery, "ARTIFACTS", tmp_path)
+    items = [{"id": str(i), "properties": {"datetime": f"2024-05-{i+10:02d}T00:00:00Z"}} for i in range(6)]
+    monkeypatch.setattr(imagery, "catalog_candidates", lambda *args: items)
+    def read(item, name, transform, size, *args, **kwargs):
+        if name == "visual": return np.ma.array(np.full((3, size, size), 120, dtype="uint8"))
+        return np.ma.array(np.full((size, size), 4 if item["id"] == "5" else 9, dtype="uint8"))
+    monkeypatch.setattr(imagery, "read_asset", read)
+    assert imagery._fetch_observation(req(), req().date, "single").image.scene_id == "5"
+    monkeypatch.setattr(imagery, "catalog_candidates", lambda *args: items[:5])
+    with pytest.raises(EvidenceUnavailable, match="5 had less than 50% usable coverage; 0 could not be read"):
+        imagery._fetch_observation(req(), req().date, "single")

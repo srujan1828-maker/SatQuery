@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useRef, useEffect } from "react";
 import { submitQuery, fetchGeocodeSuggestions } from "./api/query";
 import AreaMap from "./components/AreaMap";
+import WorkspaceHeader from "./components/WorkspaceHeader";
 import EvidenceViewer from "./components/EvidenceViewer";
 import "./App.css";
 const Globe = lazy(() => import("./components/GlobeViewer"));
@@ -174,17 +175,11 @@ export default function App({ mode = "vqa", title = "Ask Satellite" }) {
     );
   return (
     <main id="main-content" className="shell">
-      <header>
-        <div className="eyebrow">SATQUERY / EARTH OBSERVATION</div>
-        <h1>{title}</h1>
-        <p>
-          Explore dated satellite observations, compare areas and keep a
-          traceable record of every result.
-        </p>
-      </header>
+      <WorkspaceHeader title={title} description={mode === "change_detection" ? "Compare two moments in time. Ask what changed and inspect the observations behind the answer." : mode === "fusion" ? "Explore your question through optical imagery and radar. Compare complementary views of the same area." : "Ask a question about your region. Retrieve a dated observation and explore the evidence."} sources={mode === "fusion" ? ["Sentinel-2 optical", "Sentinel-1 radar", "Paired observations"] : ["Sentinel-2", mode === "change_detection" ? "Before / after" : "Dated observations", "Spectral views"]} />
+      <div className="workflow-strip" aria-label="Analysis steps"><span><b>01</b> Ask your question</span><span><b>02</b> Choose area & dates</span><span><b>03</b> Inspect the evidence</span></div>
       <div className="workspace">
         <section className="card controls">
-          <h2>Analysis workspace</h2>
+          <div className="panel-heading"><span className="eyebrow">QUERY PARAMETERS</span><h2>Your analysis</h2></div>
           <form onSubmit={run}>
             <label>
               Question
@@ -439,7 +434,8 @@ export default function App({ mode = "vqa", title = "Ask Satellite" }) {
               <span className="badge">Confidence: uncalibrated</span>
             </div>
             <p className="answer">{result.answer_text}</p>
-            {result.error && <p role="alert">{result.error.message}</p>}
+            {result.error && result.error.message !== result.answer_text && <p role="alert">{result.error.message}</p>}
+            {result.error?.code === "evidence_unavailable" && <div className="recovery-panel"><h3>Try another observation window</h3><p>Your chosen dates have not been changed. Clouds, missing coverage or provider errors can prevent a usable observation.</p>{form.tolerance_days < 30 && <button onClick={() => change({ tolerance_days: 30 })}>Set date tolerance to ±30 days</button>}<p className="muted">Review the dates above, then select Retrieve and analyze. Wider windows can return an acquisition farther from your requested date.</p></div>}
             <ul>
               {result.warnings.map((w) => (
                 <li key={w}>{w}</li>

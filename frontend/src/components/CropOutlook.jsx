@@ -1,3 +1,4 @@
+import WorkspaceHeader from "./WorkspaceHeader";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { fetchGeocodeSuggestions, submitQuery } from "../api/query";
 const Research = lazy(() => import("./CropResearch"));
@@ -49,8 +50,7 @@ export default function CropOutlook() {
     <div className="shell crop-switch"><button aria-pressed={!research} onClick={() => { invalidate(); setResearch(false); }}>Automatic retrieval</button>
       <button aria-pressed={research} onClick={() => { invalidate(); searchAbort.current?.abort(); setSearching(false); setResearch(true); }}>Advanced research dataset</button></div>
     {research ? <Suspense fallback={<p>Loading research tools…</p>}><Research /></Suspense> : <main id="main-content" className="shell crop-page">
-      <header><div className="eyebrow">SATQUERY / AGRICULTURE</div><h1>Crop Outlook</h1>
-        <p>Choose your region, crop and season dates. SatQuery retrieves available satellite observations, weather and configured historical yield records for you.</p></header>
+      <WorkspaceHeader title="Crop Outlook" category="AGRICULTURE" description="Choose a region, crop and season. Explore retrieved weather, vegetation, radar and available official crop records." sources={["NASA POWER", "Sentinel-1 & 2", "India OGD"]} />
       <section className="card"><h2>Choose a location</h2>
         <div className="crop-grid"><label>Region or coordinates<input value={search} onChange={e => { searchAbort.current?.abort(); setSearching(false); invalidate(); setSearch(e.target.value); setArea(null); setMatches([]); }} placeholder="Town, district, or latitude, longitude" /></label>
           <button onClick={locate} disabled={searching || search.trim().length < 2}>{searching ? "Searching…" : "Find region"}</button></div>

@@ -1,3 +1,4 @@
+@import "./reference-tokens.css";
 /* Adapted from the supplied SatQuery design; live React workflows remain authoritative. */
 :root { --sq-bg:#060b10; --sq-panel:#0e1a26; --sq-line:rgba(255,255,255,.11); --sq-green:#a8e6a3; color:#e9eef3; background:var(--sq-bg); font-family:Manrope,"Segoe UI",sans-serif; }
 html,body { background:var(--sq-bg); }
@@ -57,3 +58,29 @@ h1 span { color:var(--sq-green); }
 .spectral-legend,.spectral-grid details { font-size:11px; color:#b8c8d4; }
 input[type="checkbox"] { width:auto; align-self:flex-start; }
 @media(max-width:600px) { .spectral-grid { grid-template-columns:1fr; } }
+/* Shared reference-design treatment for every live workspace, including results. */
+.shell { max-width:1280px; padding:34px 28px 56px; }
+.workspace-heading { max-width:none; padding:20px 0 30px; margin-bottom:18px; border-bottom:1px solid var(--border-glass); }
+.workspace-heading-row { display:flex; justify-content:space-between; align-items:center; gap:24px; }
+.workspace-heading h1 { font-size:clamp(28px,3.5vw,42px); font-weight:700; letter-spacing:-.035em; margin:14px 0; }
+.workspace-heading p { color:var(--text-muted); max-width:700px; font-size:14px; line-height:1.8; }
+.workspace-mark { display:grid; place-items:center; width:76px; height:76px; flex-shrink:0; font-size:45px; color:var(--accent-light); background:radial-gradient(circle,rgba(95,227,138,.15),transparent 70%); }
+.source-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:22px; }.source-chips span { border:1px solid var(--border-glass); border-radius:var(--radius-full); background:var(--bg-card); color:var(--text-muted); padding:6px 12px; font-size:11px; }
+.workflow-strip { display:flex; flex-wrap:wrap; gap:24px; margin:0 0 26px; color:var(--text-muted); font-size:12px; }.workflow-strip b { color:var(--accent-light); font-family:var(--font-mono); margin-right:8px; font-weight:500; }
+.workspace { grid-template-columns:minmax(300px,360px) minmax(0,1fr); gap:22px; align-items:start; }
+.shell .card { background:var(--bg-card); backdrop-filter:blur(var(--glass-blur)); border:1px solid var(--border-glass); border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow-card); }
+.panel-heading { border-bottom:1px solid var(--border-glass); padding-bottom:16px; margin-bottom:22px; }.panel-heading h2 { margin:6px 0 0; font-size:19px; }
+.shell h2 { font-size:20px; font-weight:650; letter-spacing:-.025em; }.shell h3 { font-size:15px; }.shell label { color:#cbd5e1; font-size:12px; font-weight:500; gap:8px; }
+.shell input:not([type="range"]):not([type="checkbox"]),.shell textarea,.shell select { background:var(--bg-input); border:1px solid var(--border-glass); padding:12px; border-radius:var(--radius-sm); color:var(--text-main); }
+.shell textarea { min-height:112px; resize:vertical; }.shell input:focus,.shell textarea:focus,.shell select:focus { border-color:var(--accent-dark); }
+.shell button { border-radius:var(--radius-sm); font-size:13px; padding:10px 15px; }.shell .primary { background:var(--accent-light); color:var(--text-inverse); font-weight:700; box-shadow:var(--shadow-btn); }.shell .primary:hover { background:var(--accent); }
+.shell .toolbar { padding-bottom:15px; border-bottom:1px solid var(--border-glass); }.shell .toolbar .actions button { padding:7px 10px; font-size:11px; }
+.shell .badge { color:var(--accent-light); background:var(--bg-badge); border:1px solid var(--border-accent); padding:5px 9px; border-radius:var(--radius-full); font-size:10px; }
+.shell .answer { font-size:16px; line-height:1.9; color:#e2e8f0; }.shell .metrics { gap:12px; }.shell .metrics > div { border:1px solid var(--border-glass); background:rgba(95,227,138,.035); border-radius:12px; padding:18px; color:var(--text-muted); font-size:12px; }.shell .metrics strong { color:var(--accent-light); }
+.shell details { border:1px solid var(--border-glass); border-radius:10px; padding:12px 14px; margin-top:12px; }.shell summary { cursor:pointer; color:#cbd5e1; font-size:12px; }.shell details p { line-height:1.7; }
+.shell .notice,.recovery-panel { border:1px solid rgba(245,158,11,.3); background:rgba(245,158,11,.065); border-radius:12px; padding:20px; }.recovery-panel p { color:#d0c5ad; font-size:13px; line-height:1.8; }
+.crop-page .crop-grid { gap:18px; }.crop-page > .card > h2,.crop-form > h2 { padding-bottom:15px; border-bottom:1px solid var(--border-glass); margin-top:0; }.crop-page > .card > p,.crop-form > p { color:var(--text-muted); font-size:13px; line-height:1.8; }
+.table-scroll { border:1px solid var(--border-glass); border-radius:12px; overflow:auto; }.shell table { width:100%; border-collapse:collapse; font-size:12px; }.shell th { background:#12212c; color:var(--accent-light); text-align:left; }.shell td,.shell th { padding:13px; border-bottom:1px solid var(--border-glass); }.shell tbody tr:hover { background:rgba(95,227,138,.04); }
+.sources-page .feature-grid { gap:20px; }.sources-page .card { padding:28px; }.sources-page .card a { display:inline-block; margin-top:14px; font-size:12px; }
+@media(max-width:900px) { .workspace { grid-template-columns:1fr; }.workspace-heading-row { gap:12px; }.workspace-mark { width:48px; font-size:34px; } }
+@media(max-width:600px) { .shell { padding:20px 16px 36px; }.shell .card { padding:18px; }.workspace-heading { padding-top:10px; }.workflow-strip { gap:12px; font-size:11px; }.workspace-mark { display:none; }.shell .toolbar { align-items:flex-start; }.source-chips { gap:6px; } }
