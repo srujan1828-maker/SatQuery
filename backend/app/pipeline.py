@@ -5,6 +5,35 @@ from app.imagery import fetch_observation, water_change, EvidenceUnavailable
 from app.services import Settings, geochat_answer, gemini_answer
 
 
+def model_unavailable_message(request: QueryRequest, settings: Settings) -> str:
+    """Return a setup action that matches the requested analysis mode."""
+    if request.mode in {"change_detection", "fusion"}:
+        if not settings.gemini_api_key:
+            return (
+                "Paired image analysis is not configured. Set GEMINI_API_KEY on the "
+                "server, then retry."
+            )
+        return (
+            "The configured paired-image provider did not return an analysis. "
+            "Retry later."
+        )
+    if not (settings.geochat_url or settings.gemini_api_key):
+        return (
+            "Image analysis is not configured. Set GEOCHAT_ENDPOINT_URL or "
+            "GEMINI_API_KEY on the server, then retry."
+        )
+    return (
+        "The configured image-analysis provider did not return an analysis. "
+        "Retry later."
+    )
+
+
+def model_unavailable_answer(settings: Settings) -> str:
+    if not (settings.geochat_url or settings.gemini_api_key):
+        return "Verified imagery is available, but image analysis is not configured."
+    return "Verified imagery is available, but no image-analysis provider returned an analysis."
+
+
 async def handle_query(request: QueryRequest):
     settings = Settings.from_environment()
     result = QueryResponse(
@@ -116,11 +145,9 @@ async def handle_query(request: QueryRequest):
             result.analysis_status = "partial"
             result.answer_text = (
                 result.change_summary
-                or "Verified imagery is available. No compatible model returned an analysis."
+                or model_unavailable_answer(settings)
             )
-            result.warnings.append(
-                "Model analysis unavailable. Paired tasks require a configured two-image provider."
-            )
+            result.warnings.append(model_unavailable_message(request, settings))
         return result
     except EvidenceUnavailable as error:
         result.analysis_status = "partial" if result.images else "unavailable"

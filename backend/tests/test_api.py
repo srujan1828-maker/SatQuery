@@ -74,6 +74,32 @@ def test_no_model_returns_only_verified_evidence(monkeypatch):
     assert result.confidence_flag == "uncertain"
     assert result.overlay_boxes == []
     assert len(result.images) == 1
+    assert result.answer_text == (
+        "Verified imagery is available, but image analysis is not configured."
+    )
+    assert result.warnings[-1] == (
+        "Image analysis is not configured. Set GEOCHAT_ENDPOINT_URL or "
+        "GEMINI_API_KEY on the server, then retry."
+    )
+
+
+def test_unconfigured_paired_task_explains_its_provider_requirement(monkeypatch):
+    monkeypatch.setattr(
+        pipeline, "fetch_observation", lambda r, d, role: obs(r, d, role)
+    )
+    result = asyncio.run(
+        pipeline.handle_query(
+            req(
+                mode="change_detection",
+                date_range={"start": "2023-05-12", "end": "2024-05-12"},
+            )
+        )
+    )
+    assert result.analysis_status == "partial"
+    assert result.warnings[-1] == (
+        "Paired image analysis is not configured. Set GEMINI_API_KEY on the "
+        "server, then retry."
+    )
 
 
 def test_missing_radar_is_not_replaced(monkeypatch):
