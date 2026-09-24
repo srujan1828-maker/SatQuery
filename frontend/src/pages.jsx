@@ -1,5 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import App from "./App";
+import Landing from "./components/Landing";
+import DataSources from "./components/DataSources";
+import "./design.css";
 const CropOutlook = lazy(() => import("./components/CropOutlook"));
 const pages = [
   { path: "/ask", label: "Ask Satellite", mode: "vqa" },
@@ -14,21 +17,30 @@ export default function Pages() {
     window.addEventListener("popstate", onBack);
     return () => window.removeEventListener("popstate", onBack);
   }, []);
-  const page = pages.find(p => p.path === path) || (path === "/" ? pages[0] : null);
-  const navigate = (event, destination) => {
-    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  const page = pages.find(p => p.path === path);
+  const home = path === "/" && !new URLSearchParams(location.search).has("lat");
+  const activePage = page || (path === "/" && !home ? pages[0] : null);
+  const navigate = (event, destination, question) => {
+    if ((event.button != null && event.button !== 0) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    history.pushState({}, "", destination + location.search);
+    const params = new URLSearchParams(destination === "/" ? "" : location.search);
+    params.delete("q");
+    if (question) params.set("q", question);
+    history.pushState({}, "", destination + (params.size ? "?" + params : ""));
     setPath(destination);
+    window.scrollTo?.(0, 0);
   };
   return <>
+    <a className="skip-link" href="#main-content">Skip to content</a>
     <nav className="feature-nav" aria-label="SatQuery features">
-      <a className="brand" href="/ask" onClick={e => navigate(e, "/ask")}>SATQUERY</a>
-      {pages.map(p => <a key={p.path} href={p.path + location.search} aria-current={page?.path === p.path ? "page" : undefined}
+      <a className="brand" href="/" onClick={e => navigate(e, "/")}><span aria-hidden="true">◉</span> SatQuery<span className="brand-dot">.</span></a>
+      {pages.map(p => <a key={p.path} href={p.path + location.search} aria-current={activePage?.path === p.path ? "page" : undefined}
         onClick={e => navigate(e, p.path)}>{p.label}</a>)}
+      <a href="/datasets" aria-current={path === "/datasets" ? "page" : undefined} onClick={e => navigate(e, "/datasets")}>Data sources</a>
     </nav>
-    {!page ? <main className="shell"><h1>Page not found</h1><a href="/ask">Open Ask Satellite</a></main>
-      : page.mode ? <App key={page.path} mode={page.mode} title={page.label} />
+    {home ? <Landing navigate={navigate} /> : path === "/datasets" ? <DataSources /> : !activePage ? <main className="shell"><h1>Page not found</h1><a href="/ask">Open Ask Satellite</a></main>
+      : activePage.mode ? <App key={activePage.path} mode={activePage.mode} title={activePage.label} />
       : <Suspense fallback={<p className="shell" role="status">Loading Crop Outlook…</p>}><CropOutlook /></Suspense>}
+    <footer className="site-footer"><span>SatQuery · Earth intelligence, made queryable.</span><span>Observed evidence. Transparent limitations.</span></footer>
   </>;
 }

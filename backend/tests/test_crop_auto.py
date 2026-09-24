@@ -105,3 +105,27 @@ def test_product_xml_offsets_for_modern_and_legacy_baselines():
     legacy = b'<root><BOA_QUANTIFICATION_VALUE>10000</BOA_QUANTIFICATION_VALUE></root>'
     assert auto.parse_boa_metadata(legacy, "03.00")["B08"]["offset"] == 0
     with pytest.raises(ValueError): auto.parse_boa_metadata(legacy, "05.11")
+
+
+def test_ogd_distinguishes_placeholder_from_missing_resource(monkeypatch):
+    monkeypatch.setenv("OGD_API_KEY", "your_key")
+    assert "actual OGD_API_KEY" in auto.yield_history(request())["message"]
+    monkeypatch.setenv("OGD_API_KEY", "test-only-key")
+    monkeypatch.delenv("OGD_CROP_RESOURCE_ID", raising=False)
+    result = auto.yield_history(request())
+    assert result["status"] == "resource_needed"
+    assert "test-only-key" not in str(result)
+
+
+def test_alternate_satellite_scene_recovers_failed_window(monkeypatch):
+    items = [scene("2024-06-15"), scene("2024-06-20"), scene("2024-08-15")]
+    monkeypatch.setattr(auto, "catalog", lambda *args: (items, False))
+    def values(item, *args):
+        if item["id"] == "2024-06-20":
+            raise ValueError("cloudy or invalid source")
+        return {"ndvi": 0.7, "usable_fraction": 1}
+    monkeypatch.setattr(auto, "optical_values", values)
+    result = auto.satellite_series(request(), date(2024, 6, 1), date(2024, 9, 1), False, float("inf"))
+    assert result["status"] == "complete"
+    assert result["failed_reads"] == 1
+    assert [o["date"] for o in result["observations"]] == ["2024-06-15", "2024-08-15"]

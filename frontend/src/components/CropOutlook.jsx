@@ -48,7 +48,7 @@ export default function CropOutlook() {
   return <>
     <div className="shell crop-switch"><button aria-pressed={!research} onClick={() => { invalidate(); setResearch(false); }}>Automatic retrieval</button>
       <button aria-pressed={research} onClick={() => { invalidate(); searchAbort.current?.abort(); setSearching(false); setResearch(true); }}>Advanced research dataset</button></div>
-    {research ? <Suspense fallback={<p>Loading research tools…</p>}><Research /></Suspense> : <main className="shell crop-page">
+    {research ? <Suspense fallback={<p>Loading research tools…</p>}><Research /></Suspense> : <main id="main-content" className="shell crop-page">
       <header><div className="eyebrow">SATQUERY / AGRICULTURE</div><h1>Crop Outlook</h1>
         <p>Choose your region, crop and season dates. SatQuery retrieves available satellite observations, weather and configured historical yield records for you.</p></header>
       <section className="card"><h2>Choose a location</h2>

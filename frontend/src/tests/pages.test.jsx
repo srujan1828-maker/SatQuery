@@ -27,3 +27,17 @@ it("opens deep links with the correct task", () => {
   expect(screen.getByRole("link", { name: "Water Change" }).getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("heading").textContent).toContain("change_detection");
 });
+it("opens the new landing page and carries a question into analysis", () => {
+  vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  render(<Pages />);
+  expect(screen.getByRole("heading", { name: /Earth Intelligence/ })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Your satellite question"), { target: { value: "Describe the water" } });
+  fireEvent.click(screen.getByRole("button", { name: "Open analysis with this question" }));
+  expect(location.pathname).toBe("/ask");
+  expect(new URLSearchParams(location.search).get("q")).toBe("Describe the water");
+});
+it("preserves existing root coordinate links", () => {
+  history.replaceState({}, "", "/?lat=0&lon=0");
+  render(<Pages />);
+  expect(screen.getByRole("heading").textContent).toContain("vqa");
+});
