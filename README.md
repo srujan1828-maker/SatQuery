@@ -37,7 +37,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` for paired image explanations and/or `GEOCHAT_ENDPOINT_URL` for single-image explanations. Without a provider, verified observations and experimental deterministic screening remain available as partial results. Missing upstream data never becomes a synthetic result.
+Set `GEMINI_API_KEY` for single- or paired-image explanations, or set `GEOCHAT_ENDPOINT_URL` for single-image explanations. Change Detection and Optical + SAR require Gemini because they send two observations. Without a provider, verified observations and experimental deterministic screening remain available as partial results; the Ask Satellite result identifies the missing server configuration. Missing upstream data never becomes a synthetic result.
 
 ## Tests
 
