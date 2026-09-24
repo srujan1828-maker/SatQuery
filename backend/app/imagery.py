@@ -80,7 +80,7 @@ def catalog_candidates(request, target, collection):
         d = datetime.fromisoformat(
             item["properties"]["datetime"].replace("Z", "+00:00")
         ).date()
-        return abs((d - target).days), item["properties"].get("eo:cloud_cover", 100)
+        return item["properties"].get("eo:cloud_cover", 100), abs((d - target).days)
 
     return sorted(features, key=rank)
 
@@ -112,13 +112,34 @@ def _fetch_observation(request: QueryRequest, target: date, role: str, radar=Fal
     collection = "sentinel-1-grd" if radar else "sentinel-2-l2a"
     bbox, size, transform = aoi_grid(request)
     failures = 0
+    rejected = 0
+    checked = 0
+    best_fraction = 0.0
+    started = time.monotonic()
     try:
         candidates = catalog_candidates(request, target, collection)
     except (httpx.HTTPError, ValueError, KeyError) as error:
         raise EvidenceUnavailable(
             "The source catalog is temporarily unavailable. Please retry."
         ) from error
-    for item in candidates[:5]:
+    # Round-robin acquisition days so overlapping tiles from one date cannot
+    # consume the entire search budget. Rank cloud cover within the allowed window.
+    days = {}
+    for candidate in candidates:
+        day = candidate.get("properties", {}).get("datetime", "")[:10]
+        days.setdefault(day, []).append(candidate)
+    diverse = []
+    while days and len(diverse) < 10:
+        for day in list(days):
+            diverse.append(days[day].pop(0))
+            if not days[day]:
+                del days[day]
+            if len(diverse) == 10:
+                break
+    for item in diverse:
+        if time.monotonic() - started > 90:
+            break
+        checked += 1
         try:
             water = None
             if radar:
@@ -131,6 +152,7 @@ def _fetch_observation(request: QueryRequest, target: date, role: str, radar=Fal
                 # Display only: no flood threshold claimed for uncalibrated source values.
                 values = np.log1p(np.maximum(vv.filled(0), 0))
                 if not valid.any():
+                    rejected += 1
                     continue
                 low, high = np.percentile(values[valid], [2, 98])
                 gray = np.uint8(
@@ -152,7 +174,9 @@ def _fetch_observation(request: QueryRequest, target: date, role: str, radar=Fal
                 method = "Source visual RGB; transparent cloud/shadow/no-data mask from 20 m SCL"
                 resolution = 10.0
             fraction = float(valid.mean())
+            best_fraction = max(best_fraction, fraction)
             if fraction < 0.5:
+                rejected += 1
                 continue
             rgba = np.dstack((rgb, valid.astype("uint8") * 255))
             buf = BytesIO()
@@ -200,9 +224,15 @@ def _fetch_observation(request: QueryRequest, target: date, role: str, radar=Fal
         ) as error:
             logger.warning("Source raster unavailable (%s)", type(error).__name__)
             failures += 1
-    raise EvidenceUnavailable(
-        f"No usable {collection} observation within ±{request.tolerance_days} days of {target}. Checked at most five candidates; {failures} could not be read."
-    )
+    if not candidates:
+        reason = "The catalogue returned no scenes intersecting this area in the requested date window."
+    else:
+        reason = (f"Checked {checked} of {len(candidates)} catalogue candidates: "
+                  f"{rejected} had less than 50% usable coverage; {failures} could not be read. "
+                  f"Best usable coverage was {best_fraction:.0%}. "
+                  "Usable coverage excludes cloud, shadow and missing pixels.")
+    suggestion = "Try a wider date tolerance (up to ±30 days), a different date, or a smaller area."
+    raise EvidenceUnavailable(f"No usable {collection} observation within ±{request.tolerance_days} days of {target}. {reason} {suggestion}")
 
 
 def water_change(before, after):

@@ -1,5 +1,6 @@
+import WorkspaceHeader from "./WorkspaceHeader";
 export default function DataSources() {
-  return <main id="main-content" className="shell sources-page"><header><p className="eyebrow">OPEN DATA / TRANSPARENT EVIDENCE</p><h1>Know your sources.</h1><p>SatQuery retrieves observations from public services. Coverage, cloud conditions and provider availability determine what can be returned.</p></header>
+  return <main id="main-content" className="shell sources-page"><WorkspaceHeader title="Know your sources." category="OPEN DATA" description="Explore the public services behind each observation. Coverage, clouds and provider availability determine what can be returned." sources={["Open catalogues", "Acquisition dates", "Traceable provenance"]} />
     <div className="feature-grid">
       <article className="card"><h2>Sentinel-2</h2><p>Optical imagery and vegetation context, with cloud screening and calibrated reflectance. Native RGB sampling is 10 metres; enlarging an image adds no observed detail.</p><a href="https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a" target="_blank" rel="noreferrer">Explore source ↗</a></article>
       <article className="card"><h2>Sentinel-1 RTC</h2><p>Calibrated radar backscatter for complementary observations. Crop retrieval keeps the same radar track within each season. Access depends on provider availability.</p><a href="https://planetarycomputer.microsoft.com/dataset/sentinel-1-rtc" target="_blank" rel="noreferrer">Explore source ↗</a></article>

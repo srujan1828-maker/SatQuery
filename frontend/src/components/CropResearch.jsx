@@ -1,3 +1,4 @@
+import WorkspaceHeader from "./WorkspaceHeader";
 import { useEffect, useRef, useState } from "react";
 import { request } from "../api/query";
 const fields = [
@@ -59,9 +60,8 @@ export default function CropResearch() {
     } finally { clearTimeout(timeout); if (revision.current === id) setBusy(false); }
   };
   const fmt = n => n == null ? "Unavailable" : Number(n).toFixed(2);
-  return <main className="shell crop-page">
-    <header><div className="eyebrow">SATQUERY / AGRICULTURE</div><h1>Research dataset evaluation</h1>
-      <p>Evaluate historical radar, vegetation and weather measurements against actual district yields, then estimate a later season.</p></header>
+  return <main id="main-content" className="shell crop-page">
+    <WorkspaceHeader title="Research dataset evaluation" category="AGRICULTURE / RESEARCH" description="Evaluate measured crop data against historical baselines. Review held-out performance before interpreting any estimate." sources={["Measured labels", "Held-out evaluation", "Research workflow"]} />
     <section className="card"><h2>Start with measured data</h2>
       <p>This research workflow trains a small regression model from your dataset. No pretrained crop model or automatic calibrated radar extraction is connected. Existing radar display images cannot be used as measurements.</p>
       <p>Use one crop and season, at least five years, at least five districts per year, and 40 records overall. All measurements must stop at the same number of days after sowing. District records cannot establish farm-level yield.</p>
