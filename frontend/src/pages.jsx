@@ -6,7 +6,7 @@ import "./design.css";
 const CropOutlook = lazy(() => import("./components/CropOutlook"));
 const pages = [
   { path: "/ask", label: "Ask Satellite", mode: "vqa" },
-  { path: "/water-change", label: "Water Change", mode: "change_detection" },
+  { path: "/water-change", label: "Compare Changes", mode: "change_detection" },
   { path: "/optical-radar", label: "Optical & Radar", mode: "fusion" },
   { path: "/crop-outlook", label: "Crop Outlook" },
 ];

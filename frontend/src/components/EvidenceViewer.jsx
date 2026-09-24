@@ -1,4 +1,24 @@
 import { useState, useRef, useEffect } from "react";
+function SpectralPanels({ images }) {
+  const optical = images.filter(im => im.sensor === "sentinel-2" && (im.views?.length || im.view_warnings?.length));
+  const [selected, setSelected] = useState(0);
+  const [failed, setFailed] = useState({});
+  const im = optical[selected] || optical[0];
+  if (!im) return null;
+  const panels = [{ kind: "natural", label: "Natural colour", url: im.url, method: im.render_method, legend: ["RGB appearance; transparent areas have no usable evidence"] }, ...[...im.views].sort((a,b) => ["false_colour", "ndvi", "scene_classes"].indexOf(a.kind) - ["false_colour", "ndvi", "scene_classes"].indexOf(b.kind))];
+  return <section className="spectral-explorer" aria-label="Optical spectral views">
+    <div className="toolbar"><h3>One observation. Four perspectives.</h3>
+      {optical.length > 1 && <label>Optical observation<select value={selected} onChange={e => setSelected(Number(e.target.value))}>{optical.map((image, index) => <option key={image.id} value={index}>{image.role} · {image.date}</option>)}</select></label>}
+    </div>
+    <p className="muted">{im.role} · {im.date}. All panels cover the same area and acquisition. These are display products; the AI answer uses the original natural-colour evidence and any paired observation.</p>
+    <div className="spectral-grid">{panels.map(v => <figure key={v.kind}>
+      <figcaption><strong>{v.label}</strong><a href={v.url} target="_blank" rel="noreferrer">Open full view ↗</a></figcaption>
+      {failed[v.url] ? <p role="alert">This view expired or failed to load. Retrieve observations again.</p> : <img src={v.url} alt={`${v.label}, ${im.role}, acquired ${im.date}`} loading="lazy" onError={() => setFailed(old => ({ ...old, [v.url]: true }))} />}
+      <p className="spectral-legend">{v.legend.join(" · ")}</p><details><summary>How to interpret this view</summary><p>{v.method}</p>{v.sha256 && <p className="hash">SHA-256: {v.sha256}</p>}</details>
+    </figure>)}</div>
+    {im.view_warnings?.map(w => <p key={w} role="status">{w}</p>)}
+  </section>;
+}
 export default function EvidenceViewer({ images }) {
   const [zoom, setZoom] = useState(1),
     [actual, setActual] = useState(false),
@@ -70,6 +90,8 @@ export default function EvidenceViewer({ images }) {
           </button>
         </div>
       </div>
+      <SpectralPanels images={images} />
+      <h3>Original evidence / comparison</h3>
       <div
         ref={host}
         className="evidence-viewport"

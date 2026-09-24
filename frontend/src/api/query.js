@@ -68,6 +68,7 @@ export async function submitQuery(body, signal, progress) {
         result.images = result.images.map((i) => ({
           ...i,
           url: resolveImageUrl(i.url),
+          views: (i.views || []).map(v => ({ ...v, url: resolveImageUrl(v.url) })),
         }));
         return { ...result, run_id: job.id, created_at: state.created_at };
       }

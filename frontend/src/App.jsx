@@ -23,8 +23,9 @@ function initial(mode = "vqa") {
     return Number.isFinite(n) && n >= min && n <= max ? n : fallback;
   };
   return {
-    query: p.get("q")?.slice(0, 2000) || "Describe visible water and land features, and explain limitations.",
+    query: p.get("q")?.slice(0, 2000) || (mode === "change_detection" ? "Compare vegetation, built-up areas, bare ground and water between these dates. Explain visible changes and uncertainties." : mode === "fusion" ? "What do optical and radar observations reveal about vegetation, built-up areas and water here? Explain agreements and limitations." : "Describe visible land features and explain limitations."),
     mode,
+    optical_views: true,
     language: "en",
     location: {
       lat: coord("lat", 28.6139, -80, 80),
@@ -195,6 +196,8 @@ export default function App({ mode = "vqa", title = "Ask Satellite" }) {
                 onChange={(e) => change({ query: e.target.value })}
               />
             </label>
+            <p className="muted">Ask about any feature visible at the source resolution. Exact counts, causes and predictions may not be supported by these images.</p>
+            <label><input type="checkbox" checked={form.optical_views ?? false} onChange={e => change({ optical_views: e.target.checked })} /> Include spectral views (false colour, NDVI and scene classes; adds retrieval time)</label>
             <div className="pair">
               <label>
                 Latitude

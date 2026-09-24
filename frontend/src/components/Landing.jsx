@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 const features = [
   ["01", "Ask Satellite", "/ask", "Ask questions about a dated satellite observation and inspect the evidence behind the answer."],
-  ["02", "Water Change", "/water-change", "Compare observations across dates and screen for changes in visible water extent."],
+  ["02", "Compare Changes", "/water-change", "Compare dated observations for vegetation, built-up areas, water and other visible changes."],
   ["03", "Optical & Radar", "/optical-radar", "Explore complementary optical and radar observations for your selected area."],
   ["04", "Crop Outlook", "/crop-outlook", "Retrieve seasonal weather, vegetation, radar and available official crop records."],
 ];
@@ -32,7 +32,7 @@ export default function Landing({ navigate }) {
           <button className="primary" type="submit" aria-label="Open analysis with this question">Explore →</button>
         </form>
         <p className="examples-label">CHOOSE YOUR STARTING POINT</p>
-        <div className="hero-chips"><a href="/water-change" onClick={e => navigate(e, "/water-change")}>Water changes ↗</a><a href="/crop-outlook" onClick={e => navigate(e, "/crop-outlook")}>Crop & season context ↗</a><a href="/optical-radar" onClick={e => navigate(e, "/optical-radar")}>Optical + radar ↗</a></div>
+        <div className="hero-chips"><a href="/water-change" onClick={e => navigate(e, "/water-change")}>Compare changes ↗</a><a href="/crop-outlook" onClick={e => navigate(e, "/crop-outlook")}>Crop & season context ↗</a><a href="/optical-radar" onClick={e => navigate(e, "/optical-radar")}>Optical + radar ↗</a></div>
       </div>
       <div className="hero-bottom"><div><strong>Sentinel-1 & 2</strong><span>Satellite observations</span></div><div><strong>NASA POWER</strong><span>Seasonal weather</span></div><div><strong>Source-linked</strong><span>Evidence you can inspect</span></div><button className="video-toggle" onClick={() => { if (playing) video.current.pause(); else video.current.play()?.catch(() => {}); }}>{playing ? "Pause background" : "Play background"}</button></div>
     </section>

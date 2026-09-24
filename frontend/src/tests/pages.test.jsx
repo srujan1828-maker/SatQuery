@@ -9,7 +9,7 @@ it("provides four linked subpages and supports browser back", async () => {
   history.replaceState({}, "", "/ask?lat=0&lon=0");
   render(<Pages />);
   expect(screen.getByRole("heading").textContent).toContain("vqa");
-  fireEvent.click(screen.getByRole("link", { name: "Water Change" }));
+  fireEvent.click(screen.getByRole("link", { name: "Compare Changes" }));
   expect(location.pathname).toBe("/water-change");
   expect(location.search).toContain("lat=0");
   expect(screen.getByRole("heading").textContent).toContain("change_detection");
@@ -24,7 +24,7 @@ it("provides four linked subpages and supports browser back", async () => {
 it("opens deep links with the correct task", () => {
   history.replaceState({}, "", "/water-change");
   render(<Pages />);
-  expect(screen.getByRole("link", { name: "Water Change" }).getAttribute("aria-current")).toBe("page");
+  expect(screen.getByRole("link", { name: "Compare Changes" }).getAttribute("aria-current")).toBe("page");
   expect(screen.getByRole("heading").textContent).toContain("change_detection");
 });
 it("opens the new landing page and carries a question into analysis", () => {
